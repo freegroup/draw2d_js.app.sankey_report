@@ -1,0 +1,39 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <title></title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <SCRIPT src="./assets/javascript/dependencies.js"></SCRIPT>
+    <SCRIPT src="./assets/javascript/app.js"></SCRIPT>
+
+    <script type="text/javascript">
+
+        $(window).load(function () {
+
+
+            var canvas = new draw2d.Canvas("gfx_holder");
+
+            canvas.add( new draw2d.shape.basic.Oval(),100,100);
+            canvas.add( new draw2d.shape.basic.Rectangle(),120,150);
+
+            canvas.add( new draw2d.shape.node.Start(), 80,80);
+            canvas.add( new draw2d.shape.node.Start(), 50,50);
+
+            canvas.add( new draw2d.shape.node.End(), 150,150);
+            canvas.add( new draw2d.shape.node.End(), 350,250);
+
+        });
+
+    </script>
+
+</head>
+
+<body>
+<div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:1500px; height:1500px;">
+</div>
+
+
+</body>
+</html>

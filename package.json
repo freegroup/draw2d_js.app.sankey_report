@@ -1,0 +1,34 @@
+{
+  "name": "draw2d_js.app.sankey_report",
+  "version": "0.0.1",
+  "description": "Draw2D Sankey flow report",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/freegroup/draw2d_js.app.sankey_report.git"
+  },
+  "keywords": [
+    "diagramming",
+    "canvas",
+    "HTML5",
+    "js"
+  ],
+  "author": "Andreas Herz (FreeGroup)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/freegroup/draw2d_js.app.sankey_report/issues"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-contrib-concat": "~0.5.1",
+    "grunt-contrib-copy": "~0.8.0",
+    "grunt-contrib-jshint": "latest",
+    "grunt-contrib-less": "~1.0.1",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-gh-pages": "^0.10.0",
+    "jshint-stylish": "latest"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "draw2d_js.app.sankey_report",
+  "version": "0.0.1",
+  "homepage": "https://github.com/freegroup/draw2d_js.app.sankey_report",
+  "authors": [
+    "Andreas Herz <FreeGroup>"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "draw2d": "~6.1.30",
+    "jquery.browser": "~0.0.7"
+  }
+}
