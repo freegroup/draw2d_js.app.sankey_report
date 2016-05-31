@@ -10,13 +10,15 @@ module.exports = function (grunt) {
         // Task configuration
         concat: {
             options: {
-                separator: ';'
+                separator: ';\n'
             },
             libs: {
                 src: [
                     './bower_components/shifty/dist/shifty.min.js',
                     './bower_components/draw2d/dist/patched_raphael.js',
-                    './bower_components/jquery/jquery.min.js',
+                    './bower_components/jquery/dist/jquery.min.js',
+                    './bower_components/jquery-ui/jquery-ui.min.js',
+                    './bower_components/jquery-ui-layout/source/stable/jquery.layout.min.js',
                     './bower_components/draw2d/dist/jquery.autoresize.js',
                     './bower_components/draw2d/dist/jquery-touch_punch.js',
                     './bower_components/draw2d/dist/jquery.contextmenu.js',
@@ -25,13 +27,14 @@ module.exports = function (grunt) {
                     './bower_components/draw2d/dist/patched_Class.js',
                     './bower_components/draw2d/dist/json2.js',
                     './bower_components/draw2d/dist/pathfinding-browser.min.js',
-                    './bower_components/draw2d/dist/draw2d.js'
+                    './bower_components/draw2d/dist/draw2d.js',
+                    './bower_components/hogan/web/1.0.0/hogan.min.js'
                 ],
                 dest: './dist/assets/javascript/dependencies.js'
             },
             application: {
                 src: [
-                    './assets/javascript/main.js'
+                    './src/assets/javascript/**/*.js'
                 ],
                 dest: './dist/assets/javascript/app.js'
             }
@@ -43,7 +46,28 @@ module.exports = function (grunt) {
                 cwd: 'src/',
                 src: '**/*.html',
                 dest: 'dist/'
+            },
+            img: {
+                expand: true,
+                cwd: 'src/assets/img',
+                src: '*.*',
+                dest: 'dist/assets/img'
+            },
+            bootstrap:{
+                expand: true,
+                cwd: 'bower_components/bootstrap/dist/',
+                src: ['**/*'],
+                dest: './dist/lib/bootstrap'
+            },
+            // copies the build result from the "dist" directory to the server subdirectory
+            // for "npm publish"
+            server:{
+                expand: true,
+                cwd: 'dist/',
+                src: ['**/*'],
+                dest: 'server/html'
             }
+
         },
 
         less: {
@@ -52,7 +76,7 @@ module.exports = function (grunt) {
                     compress: false
                 },
                 files: {
-                    "./dist/assets/stylesheets/main.css": "./src/assets/stylesheets/main.less"
+                    "./dist/assets/css/main.css": "./src/assets/less/*.less"
                 }
             }
         },
@@ -68,24 +92,11 @@ module.exports = function (grunt) {
         },
 
         watch: {
-            js: {
+            all: {
                 files: [
-                    './src/assets/javascript/**/*.js'
+                    "./src/**/*"
                 ],
-                tasks: ['concat:appliction'],
-                options: {
-                    livereload: true
-                }
-            },
-
-            less: {
-                files: [
-                    "./src/assets/stylesheets/**/*.less"
-                ],
-                tasks: ['less'],
-                options: {
-                    livereload: true
-                }
+                tasks: ['default']
             }
         },
         'gh-pages': {
@@ -105,9 +116,14 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-gh-pages');
 
     // Task definition
-    grunt.registerTask('default', ['jshint', 'concat', 'less', 'copy']);
-    grunt.registerTask('publish', ['jshint', 'concat', 'less', 'copy', 'gh-pages']);
+    grunt.registerTask('default', [
+        'jshint',
+        'concat',
+        'less',
+        'copy:application','copy:img','copy:bootstrap',
+        'copy:server'
+    ]);
 
-
+    grunt.registerTask('publish', ['default', 'gh-pages']);
 };
 

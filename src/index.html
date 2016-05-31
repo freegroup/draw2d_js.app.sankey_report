@@ -5,35 +5,128 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <SCRIPT src="./assets/javascript/dependencies.js"></SCRIPT>
-    <SCRIPT src="./assets/javascript/app.js"></SCRIPT>
+    <link href="./lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/main.css" >
 
-    <script type="text/javascript">
+    <SCRIPT src="./assets/javascript/dependencies.js"></SCRIPT>
+    <SCRIPT src="./lib/bootstrap/js/bootstrap.min.js"></SCRIPT>
+    <SCRIPT src="./assets/javascript/app.js"></SCRIPT>
+    <script src="./socket.io/socket.io.js"></script>
+
+
+    <script>
+
+        var app,
+            socket;
 
         $(window).load(function () {
-
-
-            var canvas = new draw2d.Canvas("gfx_holder");
-
-            canvas.add( new draw2d.shape.basic.Oval(),100,100);
-            canvas.add( new draw2d.shape.basic.Rectangle(),120,150);
-
-            canvas.add( new draw2d.shape.node.Start(), 80,80);
-            canvas.add( new draw2d.shape.node.Start(), 50,50);
-
-            canvas.add( new draw2d.shape.node.End(), 150,150);
-            canvas.add( new draw2d.shape.node.End(), 350,250);
-
+            socket = io();
+            app  = new sankey.Application(socket);
         });
 
     </script>
 
-</head>
+    </head>
 
-<body>
-<div  onselectstart="javascript:/*IE8 hack*/return false" id="gfx_holder" style="width:1500px; height:1500px;">
+<body id="container">
+
+<div id="content">
+    <div id="editor">
+        <div id="palette">
+            <img src="assets/img/Start.png"      data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable"></img>
+            <img src="assets/img/Activity.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable"></img>
+        </div>
+        <div id="view">
+            <div id="canvas"  style="width:1500px; height:1500px;-webkit-tap-highlight-color: rgba(0,0,0,0); "></div>
+            <div id="property">
+            </div>
+        </div>
+    </div>
+</div>
+<div id="toolbar">
+</div>
+
+
+
+<!--
+  # Save Dialog
+  #
+  #
+-->
+<div id="githubSaveFileDialog" class="modal fade githubFileDialog" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">Save your circuit</h4>
+            </div>
+            <div class="modal-body">
+                <div class="media">
+                    <div class="media-left media-middle">
+                        <a href="#">
+                            <div class="media-object githubFilePreview ion-ios-upload-outline" ></div>
+                        </a>
+                    </div>
+                    <div class="media-body">
+
+
+                        <br>
+                        <br>
+                        <fieldset>
+                            <div class="form-group">
+                                <div class="col-lg-12">
+                                    <input type="text"
+                                           class="form-control floating-label githubFileName"
+                                           value=""
+                                            >
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="row"></div>
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Abort</button>
+                <button class="btn btn-primary okButton"><span>Save</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--
+  # GitHub File select/open dialog
+  #
+  -->
+<div id="githubFileSelectDialog" class="modal fade githubFileDialog" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">File Open...</h4>
+            </div>
+            <div class="modal-body">
+
+
+                <div class="list-group githubNavigation">
+                    <!-- FileList here -->
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Abort</button>
+                <button class="btn btn-primary okButton"><span>Open</span></button>
+            </div>
+        </div>
+    </div>
 </div>
 
 
 </body>
+
+
+
+
 </html>

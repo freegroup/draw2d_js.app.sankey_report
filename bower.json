@@ -8,6 +8,12 @@
   "license": "MIT",
   "dependencies": {
     "draw2d": "~6.1.30",
-    "jquery.browser": "~0.0.7"
+    "jquery.browser": "~0.0.7",
+    "shifty": "^1.5.2",
+    "bootstrap": "~3.3.4",
+    "hogan": "~3.0.2",
+    "jquery-ui": "~1.11.4",
+    "jquery-ui-layout": "^1.4.3",
+    "socket.io": "^1.4.6"
   }
 }
