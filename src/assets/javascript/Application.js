@@ -18,6 +18,8 @@ var sankey ={
 	property:{
 	},
 	dialog:{
+	},
+	policy:{
 	}
 };
 
@@ -33,18 +35,9 @@ sankey.Application = Class.extend(
      * 
      * @param {String} canvasId the id of the DOM element to use as paint container
      */
-    init : function(socket)
+    init : function()
     {
 		var _this = this;
-
-		socket.on("connection:change", function(weights){
-			weights.forEach(function(weight){
-				var conn = _this.view.getLine(weight.conn);
-				if(conn!==null){
-					conn.setText(weight.value);
-				}
-			});
-		});
 
 
 		this.localStorage = [];
@@ -181,6 +174,7 @@ sankey.Application = Class.extend(
 
 	fileOpen: function()
 	{
+		var _this= this;
 		new sankey.dialog.FileOpen(this.currentFileHandle).show(
 			// success callback
 			$.proxy(function(fileData){
@@ -189,7 +183,14 @@ sankey.Application = Class.extend(
 					var reader = new draw2d.io.json.Reader();
 					reader.unmarshal(this.view, fileData);
 					this.view.getCommandStack().markSaveLocation();
-
+					$.ajax({
+						url: conf.backend.weights,
+						method: "POST",
+						data: {id:_this.currentFileHandle.title},
+						success:function(response){
+							_this.view.updateWeights(response);
+						}
+					});
 				}
 				catch(e){
 					console.log(e);

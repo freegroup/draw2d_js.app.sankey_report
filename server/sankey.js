@@ -31,7 +31,7 @@ module.exports = {
     },
 
     weights: function(file, callback){
-        file = storage.dir+"/"+file+".sankey";
+        file = storage.dir+"/"+file;
 
         console.log("wait for open");
         var db = database.open();
@@ -97,19 +97,26 @@ function processSankey(db, id, json, file, jsonDiff){
     // check if we have already a status for the given document and sankey report
     //
     db.get("SELECT node FROM status where id=? and file=?", id, file, function(err, record){
-        // we have processed this JSON document with this sankey diagram once before
-        //
-        if(record){
-            console.log("continue");
-            figure = canvas.getFigure(record.node);
-            processNode(db,id, json,file,jsonDiff,figure);
+        if(err==null) {
+            // we have processed this JSON document with this sankey diagram once before
+            //
+            if (record) {
+                console.log("continue");
+                figure = canvas.getFigure(record.node);
+                processNode(db, id, json, file, jsonDiff, figure);
+            }
+            else {
+                console.log("start");
+                figure = canvas.getFigures().find(function (figure) {
+                    return figure instanceof sankey.shape.Start;
+                });
+                db.run("INSERT into status values (?,?,?)", id, file, figure.id, function (err, record) {
+                    processNode(db, id, json, file, jsonDiff, figure);
+                });
+            }
         }
         else{
-            console.log("start");
-            figure = canvas.getFigures().find(function(figure){return figure instanceof sankey.shape.Start;});
-            db.run("INSERT into status values (?,?,?)", id, file, figure.id ,function(err,record){
-                processNode(db,id, json,file,jsonDiff,figure);
-            });
+            console.log(err);
         }
     });
 }
@@ -143,15 +150,47 @@ function processNode(db, id, json, file, jsonDiff, figure)
         var nextFigure = connection.getTarget().getParent();
         db.run("UPDATE status set node=? where id=? and file=?", nextFigure.id, id, file, function(err){
             if(err===null){
-                db.run("INSERT OR IGNORE INTO weight(conn, file, value) VALUES(?, ?, ?)",connection.id,file, 0,function(err){
+                console.log(connection.id, file, 0);
+                db.all("SELECT conn, value, file from weight", function(err, row) {
+                    console.log(row);
+                });
+                db.run("INSERT OR IGNORE INTO weight VALUES(?, ?, ?)",connection.id, file, 0,function(err){
+                    console.log("insert weight...");
+                    if(err!==null){
+                        console.log(err);
+                        return;
+                    }
                     db.run("UPDATE weight set value=value+1 where conn=?", connection.id, function(err){
+                        console.log("update weight...");
+                        if(err!==null){
+                            console.log(err);
+                            return;
+                        }
                         db.all("SELECT conn, value from weight where file=?",file, function(err, row) {
+                            console.log("select weight..."+file);
+                            if(err!==null){
+                                console.log(err);
+                                return;
+                            }
                             io.sockets.emit("connection:change",row);
+                            if(nextFigure instanceof sankey.shape.End){
+                                cleanupNode(db, id,file);
+                            }
                         });
-
                     });
                 });
             }
+            else{
+                console.log(err);
+            }
         });
     }
+}
+
+function cleanupNode(db, id, file)
+{
+    console.log("=== cleanupNode "+file);
+    db.run("DELETE from status where id=? and file=?",  id, file,function(err){
+        console.log(err)
+    });
 }

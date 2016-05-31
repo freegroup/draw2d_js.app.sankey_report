@@ -6,6 +6,8 @@ sankey.View = draw2d.Canvas.extend({
 	
 	init:function(id)
     {
+        var _this = this;
+
 		this._super(id);
 		
 		this.setScrollArea("#"+id);
@@ -14,18 +16,29 @@ sankey.View = draw2d.Canvas.extend({
         this.installEditPolicy(  new draw2d.policy.connection.DragConnectionCreatePolicy({
             createConnection: function() {
                 // return my special kind of connection
-                var con =  new sankey.shape.Connection({
-                    "dasharray":"- ",
-                    "stroke":3,
-                    "userData":{
-                        jsonPath:""
-                    }
-                });
+                var con =  new sankey.shape.Connection();
                 return con;
             }
         }));
 
 
+        // keep up to date if the backend changes something
+        //
+        socket.on("connection:change", $.proxy(this.updateWeights, this));
+
+        this.installEditPolicy(new sankey.policy.EditPolicy());
+
+    },
+
+    updateWeights: function(weights)
+    {
+        var _this = this;
+        weights.forEach(function(weight){
+            var conn = _this.getLine(weight.conn);
+            if(conn!==null){
+                conn.setText(weight.value);
+            }
+        });
     },
 
     /**

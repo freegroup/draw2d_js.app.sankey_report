@@ -1,8 +1,8 @@
 /*jshint evil:true */
 
 
-sankey.shape.Start = draw2d.shape.node.Start.extend({
-    NAME:"sankey.shape.Start",
+sankey.shape.End = draw2d.shape.node.End.extend({
+    NAME:"sankey.shape.End",
 
     init:function()
     {

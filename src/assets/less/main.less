@@ -1,3 +1,6 @@
+@import "colors.less";
+
+
 body{
   font-family:Helvetica, Arial, Verdana, sans-serif;
   color:#6b6b6b;
@@ -30,3 +33,31 @@ body{
 #title{
 }
 
+
+
+#configMenuIcon{
+  font-size: 25px;
+  cursor:pointer;
+  opacity: 0.3;
+  &:hover{
+    opacity: 1;
+    color:#ff0000;
+  }
+}
+
+
+#figureConfigDialog{
+  display:none;
+  background-color:white;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 10px;
+  border-left: 3px solid @tintColorEdit;
+  .figureAddLabel{
+    font-size:14px;
+    font-weight: 200;
+    cursor:pointer;
+    &:hover{
+      color:@tintColorEdit;
+    }
+  }
+}

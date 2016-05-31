@@ -47,6 +47,12 @@ module.exports = function (grunt) {
                 src: '**/*.html',
                 dest: 'dist/'
             },
+            ionicons:{
+                expand: true,
+                cwd: 'bower_components/Ionicons/',
+                src: ['./css/*', "./fonts/*"],
+                dest: './dist/lib/ionicons'
+            },
             img: {
                 expand: true,
                 cwd: 'src/assets/img',
@@ -120,7 +126,7 @@ module.exports = function (grunt) {
         'jshint',
         'concat',
         'less',
-        'copy:application','copy:img','copy:bootstrap',
+        'copy:application','copy:img','copy:bootstrap' , 'copy:ionicons',
         'copy:server'
     ]);
 

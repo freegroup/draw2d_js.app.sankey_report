@@ -37,28 +37,25 @@ sankey.dialog.FileOpen = Class.extend({
                 },
                 success:function(response) {
                     var files = response.files;
-                    // sort the reusult
+                    // sort the result
                     // Directories are always on top
                     //
                     files.sort(function (a, b) {
                         if (a.type === b.type) {
-                            if (a.name.toLowerCase() < b.name.toLowerCase())
+                            if (a.id.toLowerCase() < b.id.toLowerCase())
                                 return -1;
-                            if (a.name.toLowerCase() > b.name.toLowerCase())
+                            if (a.id.toLowerCase() > b.id.toLowerCase())
                                 return 1;
                             return 0;
-                        }
-                        if (a.type === "dir") {
-                            return -1;
                         }
                         return 1;
                     });
 
                     var compiled = Hogan.compile(
                         '         {{#files}}' +
-                        '           <a href="#" data-draw2d="{{draw2d}}" class="list-group-item githubPath text-nowrap" data-name="{{name}}" data-id="{{id}}">' +
+                        '           <a href="#" data-draw2d="{{draw2d}}" class="list-group-item githubPath text-nowrap" data-id="{{id}}">' +
                         '              <span class="fa fa-file-o"></span>' +
-                        '              {{{name}}}' +
+                        '              {{{id}}}' +
                         '           </a>' +
                         '         {{/files}}'
                     );
@@ -75,7 +72,6 @@ sankey.dialog.FileOpen = Class.extend({
 
                     $('.githubPath[data-draw2d="true"]').on("click", function () {
                         var id   = $(this).data("id");
-                        var name = $(this).data("name");
                         $.ajax({
                                 url: conf.backend.file.get,
                                 method: "POST",
@@ -87,7 +83,7 @@ sankey.dialog.FileOpen = Class.extend({
                                 }
                             }
                         ).done(function(content){
-                                _this.currentFileHandle.title=name;
+                                _this.currentFileHandle.title=id;
                                 successCallback(content);
                                 $('#githubFileSelectDialog').modal('hide');
                             }

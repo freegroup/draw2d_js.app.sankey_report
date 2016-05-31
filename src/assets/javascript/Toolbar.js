@@ -51,20 +51,6 @@ sankey.Toolbar = Class.extend({
 		},this));
 
 
-		this.weightButton  = $("<button>Weight</button>");
-		this.html.append(this.weightButton);
-		this.weightButton.button().click($.proxy(function(){
-			$.ajax({
-				url: conf.backend.weights,
-				method: "POST",
-				data: {id:app.currentFileHandle.title},
-				success:function(response){
-					console.log(response);
-				}
-			});
-		},this));
-
-
 		// Register a Selection listener for the state handling
 		// of the Delete Button
 		//

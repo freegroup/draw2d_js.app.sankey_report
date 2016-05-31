@@ -43,7 +43,7 @@ app.use(bodyParser.urlencoded({ extended: true}));
 app.get('/backend/file/list', function (req, res) {
     glob(storage.dir+"/*.sankey", {}, function (er, files) {
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify( {files:files.map(function(f){f= path.basename(f,".sankey");return {id:f+".sankey", name: f};})}));
+        res.send(JSON.stringify( {files:files.map(function(f){return {id:path.basename(f)};})}));
     });
 });
 
@@ -53,7 +53,7 @@ app.post('/backend/file/get', function (req, res) {
 });
 
 app.post('/backend/file/save', function (req, res) {
-    fs.writeFile(storage.dir + "/" + req.body.id + ".sankey", req.body.content, function (err) {
+    fs.writeFile(storage.dir + "/" + req.body.id, req.body.content, function (err) {
         res.send('true');
     });
 });
