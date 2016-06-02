@@ -34,9 +34,9 @@
 <div id="content">
     <div id="editor">
         <div id="palette">
-            <img src="assets/img/Start.png"      data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable"></img>
-            <img src="assets/img/Activity.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable"></img>
-            <img src="assets/img/End.png"        data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable"></img>
+            <img src="assets/img/Start.png"      data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/Activity.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/End.png"        data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable">
         </div>
         <div id="view">
             <div id="canvas"  style="width:1500px; height:1500px;-webkit-tap-highlight-color: rgba(0,0,0,0); "></div>
@@ -130,9 +130,83 @@
     <div class="figureAddLabel"><span class="ion-ios-pricetag-outline"></span> add label</div>
 </div>
 
+
+<script id="template_startNode" type="hogan/template">
+    <table class="table" id="transitions">
+        <thead><tr><th data-path="jsonPath">JSON Path</th><th data-path="operation">Operation</th><th data-path="value">Value</th></tr></thead>
+        <tbody>
+        {{#transitions}}
+            <tr>
+                <td><input type="text"  value="{{jsonPath}}" class="form-control"></td>
+                <td>
+                    <select value="{{operation}}" class="form-control">
+                        <option value="equals">is equal</option>
+                        <option value="!equals">not equal</option>
+                        <option value="null">is null</option>
+                        <option value="!null">not null</option>
+                        <option value="undefined">undefined</option>
+                    </select>
+                </td>
+                <td><input type="text" value="{{value}}" class="form-control"></td>
+            </tr>
+        {{/transitions}}
+        <tr>
+            <td><input type="text"  value="" class="form-control"></td>
+            <td>
+                <select class="form-control" value="equals">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="" class="form-control"></td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+
+
+<script id="template_connection" type="hogan/template">
+    <table class="table" id="transitions">
+        <thead><tr><th data-path="jsonPath">JSON Path</th><th data-path="operation">Operation</th><th data-path="value">Value</th></tr></thead>
+        <tbody>
+        {{#transitions}}
+        <tr>
+            <td><input type="text"  value="{{jsonPath}}" class="form-control"></td>
+            <td>
+                <select value="{{operation}}" class="form-control">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="changed">has changed</option>
+                    <option value="!changed">not changed</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="{{value}}" class="form-control"></td>
+        </tr>
+        {{/transitions}}
+        <tr>
+            <td><input type="text"  value="" class="form-control"></td>
+            <td>
+                <select class="form-control" value="equals">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="changed">has changed</option>
+                    <option value="!changed">not changed</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="" class="form-control"></td>
+        </tr>
+        </tbody>
+    </table>
+</script>
 </body>
-
-
-
 
 </html>

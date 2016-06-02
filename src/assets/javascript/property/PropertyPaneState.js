@@ -1,12 +1,13 @@
 
 
-sankey.property.PropertyPaneState = Class.extend({
-	
+sankey.property.PropertyPaneState  = sankey.property.PropertyPane.extend({
+
 	init:function(figure)
 	{
-	    this.figure = figure;
+		this._super(figure);
 	},
-	
+
+
 	injectPropertyView: function( domId)
 	{
 		var view = $(
@@ -16,27 +17,6 @@ sankey.property.PropertyPaneState = Class.extend({
 		);
 
 		domId.append(view);
-	},
-
-    /**
-     * @method
-     * called by the framework if the pane has been resized. This is a good moment to adjust the layout if
-     * required.
-     * 
-     */
-    onResize: function()
-    {
-    },
-    
-
-    /**
-     * @method
-     * called by the framework before the pane will be removed from the DOM tree
-     * 
-     */
-    onHide: function()
-    {
-    }
-    
+	}
 });
 

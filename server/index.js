@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // Load the http module to create an http server.
 var sankey  = require('./sankey');
-var storage = require('./storage');
 
 var express =require('express');
 var os   = require('os');
@@ -12,6 +11,7 @@ var io   = require('socket.io')(http);
 var glob = require("glob");
 var path = require('path');
 var bodyParser = require('body-parser');
+var persistence = require('./persistence');
 
 
 sankey.socket(io);
@@ -41,7 +41,7 @@ app.use(bodyParser.urlencoded({ extended: true}));
 
 
 app.get('/backend/file/list', function (req, res) {
-    glob(storage.dir+"/*.sankey", {}, function (er, files) {
+    glob(persistence.dir+"/*.sankey", {}, function (er, files) {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify( {files:files.map(function(f){return {id:path.basename(f)};})}));
     });
@@ -49,11 +49,12 @@ app.get('/backend/file/list', function (req, res) {
 
 app.post('/backend/file/get', function (req, res) {
     res.setHeader('Content-Type', 'application/json');
-    fs.createReadStream(storage.dir+"/"+req.body.id).pipe(res);
+    fs.createReadStream(persistence.dir+"/"+req.body.id).pipe(res);
 });
 
 app.post('/backend/file/save', function (req, res) {
-    fs.writeFile(storage.dir + "/" + req.body.id, req.body.content, function (err) {
+    fs.writeFile(persistence.dir + "/" + req.body.id, req.body.content, function (err) {
+        persistence.cleanupForFile(req.body.id);
         res.send('true');
     });
 });

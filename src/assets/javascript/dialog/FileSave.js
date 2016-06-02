@@ -18,7 +18,7 @@ sankey.dialog.FileSave = Class.extend({
      *
      * @since 4.0.0
      */
-    show: function(canvas)
+    show: function(canvas, successCallback)
     {
         var _this = this;
 
@@ -49,6 +49,7 @@ sankey.dialog.FileSave = Class.extend({
                 ).done(function(){
                         $('#githubSaveFileDialog').modal('hide');
                         _this.currentFileHandle.title=data.id;
+                        successCallback();
                 });
 
             });

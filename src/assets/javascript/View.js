@@ -33,6 +33,9 @@ sankey.View = draw2d.Canvas.extend({
     updateWeights: function(weights)
     {
         var _this = this;
+        this.getLines().each(function(index, conn){
+            conn.setText("0");
+        });
         weights.forEach(function(weight){
             var conn = _this.getLine(weight.conn);
             if(conn!==null){

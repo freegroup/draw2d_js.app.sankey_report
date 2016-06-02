@@ -20,6 +20,8 @@ var sankey ={
 	dialog:{
 	},
 	policy:{
+	},
+	anchor:{
 	}
 };
 
@@ -114,11 +116,8 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:5,
 				spacing_closed:5,
-				size:120,
-				paneSelector: "#property",
-				onresize:$.proxy(function(){
-					//this.propertyPane.onResize();
-				},this)
+				size:180,
+				paneSelector: "#property"
 			},
 			center: {
 				resizable:true,
@@ -168,7 +167,10 @@ sankey.Application = Class.extend(
 
 	fileSave: function()
 	{
-		new sankey.dialog.FileSave(this.currentFileHandle).show(this.view);
+		var _this = this;
+		new sankey.dialog.FileSave(this.currentFileHandle).show(this.view, function(){
+			_this.updateWeights();
+		});
 	},
 
 
@@ -183,20 +185,26 @@ sankey.Application = Class.extend(
 					var reader = new draw2d.io.json.Reader();
 					reader.unmarshal(this.view, fileData);
 					this.view.getCommandStack().markSaveLocation();
-					$.ajax({
-						url: conf.backend.weights,
-						method: "POST",
-						data: {id:_this.currentFileHandle.title},
-						success:function(response){
-							_this.view.updateWeights(response);
-						}
-					});
+					_this.updateWeights();
 				}
 				catch(e){
 					console.log(e);
 					this.view.clear();
 				}
 			},this));
+	},
+
+	updateWeights:function()
+	{
+		var _this = this;
+		$.ajax({
+			url: conf.backend.weights,
+			method: "POST",
+			data: {id:_this.currentFileHandle.title},
+			success:function(response){
+				_this.view.updateWeights(response);
+			}
+		});
 	}
 });
 

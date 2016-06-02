@@ -7,6 +7,14 @@ sankey.shape.End = draw2d.shape.node.End.extend({
     init:function()
     {
         this._super();
+
+        this.add(new draw2d.shape.basic.Label({
+            text:"End",
+            angle:270,
+            fontColor:"#FFFFFF",
+            fontSize:18,
+            stroke:0
+        }), new draw2d.layout.locator.CenterLocator());
     },
 
 
@@ -29,6 +37,8 @@ sankey.shape.End = draw2d.shape.node.End.extend({
             memento.labels.push(labelJSON);
         });
 
+        delete memento.ports;
+
         return memento;
     },
 
@@ -41,11 +51,13 @@ sankey.shape.End = draw2d.shape.node.End.extend({
      */
     setPersistentAttributes : function(memento)
     {
+        delete memento.ports;
+
         this._super(memento);
 
         // remove all decorations created in the constructor of this element
         //
-        this.resetChildren();
+//        this.resetChildren();
 
         // and add all children of the JSON document.
         //

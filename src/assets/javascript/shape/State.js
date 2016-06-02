@@ -6,6 +6,11 @@ sankey.shape.State = draw2d.shape.node.Between.extend({
     init:function()
     {
         this._super();
+ //       this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.OutputConnectionAnchor());
+ //       this.getInputPort(0).setConnectionAnchor(new sankey.anchor.InputConnectionAnchor());
+
+        this.createPort("input", new draw2d.layout.locator.TopLocator());
+        this.createPort("input", new draw2d.layout.locator.BottomLocator());
     },
 
     /**
@@ -27,6 +32,8 @@ sankey.shape.State = draw2d.shape.node.Between.extend({
             memento.labels.push(labelJSON);
         });
 
+        delete memento.ports;
+
         return memento;
     },
 
@@ -39,6 +46,7 @@ sankey.shape.State = draw2d.shape.node.Between.extend({
      */
     setPersistentAttributes : function(memento)
     {
+        delete memento.ports;
         this._super(memento);
 
         // remove all decorations created in the constructor of this element
