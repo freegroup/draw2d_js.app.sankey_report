@@ -1,6 +1,7 @@
 //var DEFAULT_ROUTER= new draw2d.layout.connection.DirectRouter();
-var DEFAULT_ROUTER= new draw2d.layout.connection.FanConnectionRouter();
+//var DEFAULT_ROUTER= new draw2d.layout.connection.FanConnectionRouter();
 //var DEFAULT_ROUTER= new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
+var DEFAULT_ROUTER= new draw2d.layout.connection.SplineConnectionRouter();
 
 sankey.shape.Connection = draw2d.Connection.extend({
     NAME : "sankey.shape.Connection",

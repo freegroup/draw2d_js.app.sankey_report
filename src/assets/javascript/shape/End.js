@@ -15,6 +15,8 @@ sankey.shape.End = draw2d.shape.node.End.extend({
             fontSize:18,
             stroke:0
         }), new draw2d.layout.locator.CenterLocator());
+
+        this.getInputPort(0).setConnectionAnchor(new sankey.anchor.InputConnectionAnchor());
     },
 
 

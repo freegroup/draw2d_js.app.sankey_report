@@ -15,7 +15,7 @@ sankey.shape.Start = draw2d.shape.node.Start.extend({
             stroke:0
         }), new draw2d.layout.locator.CenterLocator());
 
-     //   this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.OutputConnectionAnchor());
+        this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.OutputConnectionAnchor());
     },
 
 

@@ -66,9 +66,14 @@ app.post('/backend/sankey/weights', function (req, res) {
 });
 
 app.post('/backend/hook', function(req, res){
-    var id  = req.body.id;
-    var json = JSON.parse(req.body.content);
-    sankey.process(id,json);
+
+    var body = req.body;
+    var id  = body.id;
+    var json = body.content;
+    json.EVENT = body.event;
+    json.OBJECT= body.object;
+    console.log(json);
+    sankey.process({jsonId:id,json:json});
     res.send('true');
 });
 
