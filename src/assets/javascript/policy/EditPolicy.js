@@ -38,6 +38,10 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
         $("#figureConfigDialog .figureAddLabel").on("click",function(){
             _this._attachLabel(_this.configFigure);
         });
+
+        $("#figureConfigDialog .figureSetColor").on("click",function(){
+            _this._setColor(_this.configFigure);
+        });
     },
 
 
@@ -47,6 +51,7 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
 
         canvas.off(this.mouseMoveProxy);
         $("#figureConfigDialog .figureAddLabel").off("click");
+        $("#figureConfigDialog .figureSetColor").off("click");
     },
 
 
@@ -138,7 +143,32 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
             this.configFigure.add(label,locator);
         }
         $("#figureConfigDialog").hide();
+    },
+
+    _setColor:function(figure)
+    {
+        var colorString = [];
+        colors.forEach(function(c){
+            colorString.push("<tr>");
+            for(var entry in c){
+                colorString.push("<td data-color='"+c[entry]+"' style='width:25px;height:15px;background-color:"+c[entry]+"'></td>");
+            }
+            colorString.push("</tr>");
+        });
+
+
+        $("#figureConfigDialog").hide();
+
+        var pos = figure.getBoundingBox().getTopLeft();
+        pos = figure.getCanvas().fromCanvasToDocumentCoordinate(pos.x, pos.y);
+        pos.y -=30;
+
+        var configIcon = $("<div id='colorDialog'><table>"+colorString.join("")+"</table></div>");
+        $("body").append(configIcon);
+        configIcon.css({top: pos.y, left: pos.x, position:'absolute'});
+        $("#colorDialog td").on("click",function(){
+            figure.attr({bgColor: $(this).data("color")});
+            $("#colorDialog").remove();
+        });
     }
-
-
 });

@@ -28,7 +28,8 @@ module.exports = function (grunt) {
                     './bower_components/draw2d/dist/json2.js',
                     './bower_components/draw2d/dist/pathfinding-browser.min.js',
                     './bower_components/draw2d/dist/draw2d.js',
-                    './bower_components/hogan/web/1.0.0/hogan.min.js'
+                    './bower_components/hogan/web/1.0.0/hogan.min.js',
+                    './bower_components/devbridge-autocomplete/dist/jquery.autocomplete.min.js'
                 ],
                 dest: './dist/assets/javascript/dependencies.js'
             },

@@ -116,7 +116,7 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:5,
 				spacing_closed:5,
-				size:180,
+				size:120,
 				paneSelector: "#property"
 			},
 			center: {

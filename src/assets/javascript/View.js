@@ -28,6 +28,10 @@ sankey.View = draw2d.Canvas.extend({
 
         this.installEditPolicy(new sankey.policy.EditPolicy());
 
+        // show the ports of the elements only if the mouse cursor is close to the shape.
+        //
+        this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible:50});
+        this.installEditPolicy(this.coronaFeedback);
     },
 
     updateWeights: function(weights)

@@ -31,25 +31,8 @@ sankey.Toolbar = Class.extend({
 			app.fileNew();
 		},this));
 
-		this.testButton  = $("<button>Test</button>");
-		this.html.append(this.testButton);
-		this.testButton.button().click($.proxy(function(){
-			$.ajax({
-				url: conf.backend.hook,
-				method: "POST",
-				data: {
-					id:"43",
-					content:JSON.stringify({
-						id:45,
-						test:'test',
-						timestamp: {
-							time:new Date().getTime()
-						}
-					},undefined,2)
-				}
-			});
-		},this));
-
+		this.delimiter  = $("<span class='toolbar_delimiter'>&nbsp;</span>");
+		this.html.append(this.delimiter);
 
 		// Register a Selection listener for the state handling
 		// of the Delete Button
@@ -71,9 +54,6 @@ sankey.Toolbar = Class.extend({
 		this.redoButton.button().click($.proxy(function(){
 		    this.view.getCommandStack().redo();
 		},this)).button( "option", "disabled", true );
-		
-		this.delimiter  = $("<span class='toolbar_delimiter'>&nbsp;</span>");
-		this.html.append(this.delimiter);
 
 		// Inject the DELETE Button
 		//

@@ -35,7 +35,7 @@
     <div id="editor">
         <div id="palette">
             <img src="assets/img/Start.png"      data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable">
-            <img src="assets/img/Activity.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/Pipe.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable">
             <img src="assets/img/End.png"        data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable">
         </div>
         <div id="view">
@@ -46,6 +46,8 @@
     </div>
 </div>
 <div id="toolbar">
+    <img src="assets/img/logo.png">
+    <div id="title">Sankey</div>
 </div>
 
 
@@ -127,7 +129,8 @@
 
 
 <div id="figureConfigDialog">
-    <div class="figureAddLabel"><span class="ion-ios-pricetag-outline"></span> add label</div>
+    <div class="figureAddLabel configMenuEntry"><span class="ion-ios-pricetag-outline"></span> Add label</div>
+    <div class="figureSetColor configMenuEntry"><span class="ion-android-color-palette"></span> Color</div>
 </div>
 
 
@@ -174,7 +177,7 @@
         <tbody>
         {{#transitions}}
         <tr>
-            <td><input type="text"  value="{{jsonPath}}" class="form-control"></td>
+            <td><input value="{{jsonPath}}"  type="text" placeholder="JSON path" class="typeahead form-control"></td>
             <td>
                 <select value="{{operation}}" class="form-control">
                     <option value="equals">is equal</option>
@@ -190,7 +193,7 @@
         </tr>
         {{/transitions}}
         <tr>
-            <td><input type="text"  value="" class="form-control"></td>
+            <td><input type="text" placeholder="JSON path" class="typeahead form-control"></td>
             <td>
                 <select class="form-control" value="equals">
                     <option value="equals">is equal</option>

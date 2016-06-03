@@ -13,9 +13,13 @@ sankey.shape.End = draw2d.shape.node.End.extend({
             angle:270,
             fontColor:"#FFFFFF",
             fontSize:18,
-            stroke:0
+            stroke:0,
+            editor: new draw2d.ui.LabelInplaceEditor()
         }), new draw2d.layout.locator.CenterLocator());
-
+        this.attr({
+            radius:10,
+            bgColor:"#f50057"
+        });
         this.getInputPort(0).setConnectionAnchor(new sankey.anchor.InputConnectionAnchor());
     },
 
