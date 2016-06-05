@@ -12,20 +12,20 @@ sankey.Toolbar = Class.extend({
 		//
 		view.getCommandStack().addEventListener(this);
 
-		this.openButton  = $("<button>Open</button>");
+		this.openButton  = $("<button title='Open Report' class='ion-ios-download-outline icon'></button>");
 		this.html.append(this.openButton);
 		this.openButton.button().click($.proxy(function(){
 			app.fileOpen();
 		},this));
 
-		this.saveButton  = $("<button>Save</button>");
+		this.saveButton  = $("<button title='Save Report' class='ion-ios-upload-outline icon'></button>");
 		this.html.append(this.saveButton);
 		this.saveButton.button().click($.proxy(function(){
 			app.fileSave();
 		},this));
 
 
-		this.newButton  = $("<button>New</button>");
+		this.newButton  = $("<button title='New Report' class='ion-ios-plus-outline icon'></button>");
 		this.html.append(this.newButton);
 		this.newButton.button().click($.proxy(function(){
 			app.fileNew();
@@ -41,7 +41,7 @@ sankey.Toolbar = Class.extend({
 		
 		// Inject the UNDO Button and the callbacks
 		//
-		this.undoButton  = $("<button>Undo</button>");
+		this.undoButton  = $("<button class='ion-ios-undo-outline icon'></button>");
 		this.html.append(this.undoButton);
 		this.undoButton.button().click($.proxy(function(){
 		       this.view.getCommandStack().undo();
@@ -49,7 +49,7 @@ sankey.Toolbar = Class.extend({
 
 		// Inject the REDO Button and the callback
 		//
-		this.redoButton  = $("<button>Redo</button>");
+		this.redoButton  = $("<button class='ion-ios-redo-outline icon'></button>");
 		this.html.append(this.redoButton);
 		this.redoButton.button().click($.proxy(function(){
 		    this.view.getCommandStack().redo();
@@ -57,7 +57,7 @@ sankey.Toolbar = Class.extend({
 
 		// Inject the DELETE Button
 		//
-		this.deleteButton  = $("<button>Delete</button>");
+		this.deleteButton  = $("<button class='ion-android-close icon'></button>");
 		this.html.append(this.deleteButton);
 		this.deleteButton.button().click($.proxy(function(){
 			var node = this.view.getPrimarySelection();

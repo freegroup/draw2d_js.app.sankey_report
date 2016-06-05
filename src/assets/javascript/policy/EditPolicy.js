@@ -22,8 +22,68 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
      */
     onClick: function(figure, mouseX, mouseY, shiftKey, ctrlKey)
     {
+    },
+
+    onRightMouseDown:function(figure)
+    {
+        if(figure===null){
+            return;
+        }
+        var x = event.x;
+        var y = event.y;
+
+        var items = {
+            color: {name: "Line Color"  , icon :"x ion-android-color-palette"  }
+        };
+
+        if(figure instanceof draw2d.shape.basic.Label){
+            items.fontcolor=  {name: "Font Color"  , icon :"x ion-android-color-palette" };
+        }
+
+        if(!(figure instanceof draw2d.Connection)){
+            items.bgcolor=  {name: "Background Color"  , icon :"x ion-android-color-palette" };
+        }
+
+        if( (figure instanceof sankey.shape.Start)||
+            (figure instanceof sankey.shape.End)||
+            (figure instanceof sankey.shape.State)||
+            (figure instanceof sankey.shape.Connection)){
+            items.label={name: "Add Label" , icon :"x ion-ios-pricetag-outline" };
+            items.del=  {name: "Delete"    , icon :"x ion-ios-close-outline" };
+        }
 
 
+        $.contextMenu({
+            selector: 'body',
+            events:{
+                hide:function(){ $.contextMenu( 'destroy' ); }
+            },
+            callback: $.proxy(function(key, options){
+                switch(key){
+                    case "color":
+                        this._setColor(figure,"color");
+                        break;
+                    case "bgcolor":
+                        this._setColor(figure,"bgColor");
+                        break;
+                    case "fontcolor":
+                        this._setColor(figure,"fontColor");
+                        break;
+                    case "del":
+                        var cmd = new draw2d.command.CommandDelete(figure);
+                        this.canvas.getCommandStack().execute(cmd);
+                        break;
+                    case "label":
+                        this._attachLabel(figure);
+                        break;
+                    default:
+                        break;
+                }
+            },this),
+            x:x,
+            y:y,
+            items:items
+        });
     },
 
     onInstall:function(canvas)
@@ -40,7 +100,7 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
         });
 
         $("#figureConfigDialog .figureSetColor").on("click",function(){
-            _this._setColor(_this.configFigure);
+            _this._setColor(_this.configFigure, "bgColor");
         });
     },
 
@@ -136,16 +196,23 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
     _attachLabel:function(figure)
     {
         var text = prompt("Label");
+        var locator;
+        var label = new sankey.shape.Label({text:text, stroke:0, x:-20, y:-40});
+        if(figure instanceof draw2d.Connection){
+            locator =new sankey.locator.SmartConnectionLocator();
+            label.setPosition(figure.getStartPosition());
+        }
+        else {
+            locator = new draw2d.layout.locator.SmartDraggableLocator();
+        }
         if(text) {
-            var label = new draw2d.shape.basic.Label({text:text, stroke:0, x:-20, y:-40});
-            var locator = new draw2d.layout.locator.SmartDraggableLocator();
             label.installEditor(new draw2d.ui.LabelInplaceEditor());
-            this.configFigure.add(label,locator);
+            figure.add(label,locator);
         }
         $("#figureConfigDialog").hide();
     },
 
-    _setColor:function(figure)
+    _setColor:function(figure, attr)
     {
         var colorString = [];
         colors.forEach(function(c){
@@ -167,7 +234,7 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
         $("body").append(configIcon);
         configIcon.css({top: pos.y, left: pos.x, position:'absolute'});
         $("#colorDialog td").on("click",function(){
-            figure.attr({bgColor: $(this).data("color")});
+            figure.attr(attr, $(this).data("color"));
             $("#colorDialog").remove();
         });
     }

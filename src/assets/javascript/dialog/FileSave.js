@@ -18,7 +18,7 @@ sankey.dialog.FileSave = Class.extend({
      *
      * @since 4.0.0
      */
-    show: function(canvas, successCallback)
+    show: function(json, successCallback)
     {
         var _this = this;
 
@@ -31,27 +31,24 @@ sankey.dialog.FileSave = Class.extend({
 
         // Button: Commit to GitHub
         //
-        $("#githubSaveFileDialog .okButton").on("click", function () {
-            var writer = new draw2d.io.json.Writer();
-            writer.marshal(canvas, function (json, base64) {
-                var data ={
-                    id:$("#githubSaveFileDialog .githubFileName").val(),
-                    content:JSON.stringify(json, undefined, 2)
-                };
-                $.ajax({
-                        url: conf.backend.file.save,
-                        method: "POST",
-                        xhrFields: {
-                            withCredentials: true
-                        },
-                        data: data
-                    }
-                ).done(function(){
-                        $('#githubSaveFileDialog').modal('hide');
-                        _this.currentFileHandle.title=data.id;
-                        successCallback();
-                });
+        $("#githubSaveFileDialog .okButton").off("click").on("click", function () {
+            var data ={
+                id:$("#githubSaveFileDialog .githubFileName").val(),
+                content:JSON.stringify(json, undefined, 2)
+            };
 
+            $.ajax({
+                    url: conf.backend.file.save,
+                    method: "POST",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    data:data
+                }
+            ).done(function(){
+                    $('#githubSaveFileDialog').modal('hide');
+                    _this.currentFileHandle.title=data.id;
+                    successCallback();
             });
         });
 

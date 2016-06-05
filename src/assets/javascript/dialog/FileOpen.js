@@ -70,7 +70,7 @@ sankey.dialog.FileOpen = Class.extend({
                     $("#githubFileSelectDialog .githubNavigation").scrollTop(0);
 
 
-                    $('.githubPath[data-draw2d="true"]').on("click", function () {
+                    $('.githubPath[data-draw2d="true"]').off("click").on("click", function () {
                         var id   = $(this).data("id");
                         $.ajax({
                                 url: conf.backend.file.get,
@@ -84,6 +84,7 @@ sankey.dialog.FileOpen = Class.extend({
                             }
                         ).done(function(content){
                                 _this.currentFileHandle.title=id;
+
                                 successCallback(content);
                                 $('#githubFileSelectDialog').modal('hide');
                             }

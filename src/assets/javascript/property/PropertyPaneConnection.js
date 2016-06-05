@@ -14,7 +14,7 @@ sankey.property.PropertyPaneConnection = sankey.property.PropertyPane.extend({
 		var dom = compile.render(this.figure.getUserData());
 		domId.append(dom);
 
-		this._super();
+		this._super(domId);
     }
 });
 

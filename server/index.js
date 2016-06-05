@@ -66,7 +66,6 @@ app.post('/backend/sankey/weights', function (req, res) {
 });
 
 app.post('/backend/hook', function(req, res){
-
     var body = req.body;
     var id  = body.id;
     var json = body.content;

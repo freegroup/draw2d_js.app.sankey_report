@@ -37,7 +37,16 @@ sankey.anchor.InputConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.exte
 			y: conn.getSource()===port?conn.getTarget().getAbsoluteY():conn.getSource().getAbsoluteY()
 		};});
 
-		connsOrder.sort(function(a,b){ return a.y-b.y;});
+		// we need stable sort order even if the difference of the "y" is zero
+		// In this case we sort the connections by ID
+		connsOrder.sort(function(a,b){
+			var diff = a.y-b.y;
+			if(diff===0){
+				return a.id>b.id;
+			}
+			return diff;
+		});
+        console.log(connsOrder);
 		inquiringConnection.__inputIndex = connsOrder.findIndex(function(conn){return conn.id===inquiringConnection.id;});
 
 

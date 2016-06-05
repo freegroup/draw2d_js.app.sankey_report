@@ -89,7 +89,7 @@ function processSankey(data){
             data.file = file;
             // draw2d is loaded and you can now read some documents into a HeadlessCanvas
             //
-            var diagram = JSON.parse(fs.readFileSync(data.file));
+            var diagram = JSON.parse(fs.readFileSync(data.file)).content.diagram;
             var canvas  = new draw2d.HeadlessCanvas();
             var reader  = new draw2d.io.json.Reader();
             reader.unmarshal(canvas, diagram);

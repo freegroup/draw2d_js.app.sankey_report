@@ -17,6 +17,8 @@ sankey.property.PropertyPaneState  = sankey.property.PropertyPane.extend({
 		);
 
 		domId.append(view);
+
+		this._super(domId);
 	}
 });
 

@@ -13,6 +13,7 @@
     <SCRIPT src="./lib/bootstrap/js/bootstrap.min.js"></SCRIPT>
     <SCRIPT src="./assets/javascript/app.js"></SCRIPT>
     <script src="./socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.3/ace.js"></script>
 
 
     <script>
@@ -34,20 +35,24 @@
 <div id="content">
     <div id="editor">
         <div id="palette">
-            <img src="assets/img/Start.png"      data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/Start.png"  data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable">
             <img src="assets/img/Pipe.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable">
-            <img src="assets/img/End.png"        data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable">
+            <img src="assets/img/End.png"    data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable">
         </div>
         <div id="view">
-            <div id="canvas"  style="width:1500px; height:1500px;-webkit-tap-highlight-color: rgba(0,0,0,0); "></div>
+            <div id="draw2dCanvasWrapper">
+                <div id="canvas"  style="width:9000px; height:9000px;-webkit-tap-highlight-color: rgba(0,0,0,0); "></div>
+                <div id='templateConfigurationMenu' class='ion-ios-gear-outline'></div>
+            </div>
             <div id="property">
             </div>
         </div>
     </div>
 </div>
 <div id="toolbar">
-    <img src="assets/img/logo.png">
+    <img id="logo" src="assets/img/logo.png">
     <div id="title">Sankey</div>
+    <div id="title2">state diagram</div>
 </div>
 
 
@@ -101,7 +106,7 @@
 
 
 <!--
-  # GitHub File select/open dialog
+  #  File select/open dialog
   #
   -->
 <div id="githubFileSelectDialog" class="modal fade githubFileDialog" tabindex="-1">
@@ -128,6 +133,32 @@
 </div>
 
 
+<!--
+  #  JSON Template dialog.
+  #  Required for autosuggest in the property screen of transistions
+  #
+  -->
+<div id="jsonTemplateDialog" class="modal fade" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">Past example JSON for autosuggest suport.</h4>
+            </div>
+            <div class="modal-body">
+                <div id="templateEditor">
+{
+}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary okButton"><span>Ok</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div id="figureConfigDialog">
     <div class="figureAddLabel configMenuEntry"><span class="ion-ios-pricetag-outline"></span> Add label</div>
     <div class="figureSetColor configMenuEntry"><span class="ion-android-color-palette"></span> Color</div>
@@ -140,7 +171,7 @@
         <tbody>
         {{#transitions}}
             <tr>
-                <td><input type="text"  value="{{jsonPath}}" class="form-control"></td>
+                <td><input type="text"  value="{{jsonPath}}"  placeholder="JSON path" class="typeahead form-control"></td>
                 <td>
                     <select value="{{operation}}" class="form-control">
                         <option value="equals">is equal</option>
@@ -154,7 +185,7 @@
             </tr>
         {{/transitions}}
         <tr>
-            <td><input type="text"  value="" class="form-control"></td>
+            <td><input type="text"  value=""  placeholder="JSON path" class="typeahead form-control"></td>
             <td>
                 <select class="form-control" value="equals">
                     <option value="equals">is equal</option>

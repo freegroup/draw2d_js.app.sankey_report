@@ -22,7 +22,9 @@ var sankey ={
 	policy:{
 	},
 	anchor:{
-	}
+	},
+    locator:{
+    }
 };
 
 /**
@@ -39,9 +41,6 @@ sankey.Application = Class.extend(
      */
     init : function()
     {
-		var _this = this;
-
-
 		this.localStorage = [];
 		try {
 			if( 'localStorage' in window && window.localStorage !== null){
@@ -52,14 +51,13 @@ sankey.Application = Class.extend(
 		}
 
 		this.currentFileHandle= {
-			title: "Untitled"+conf.fileSuffix
+			title: "Untitled"+conf.fileSuffix,
+            jsonTemplate: {}
 		};
 
-
-        this.view    = new sankey.View("canvas");
-		this.toolbar = new sankey.Toolbar("toolbar",  this.view );
-		this.propertyView = new sankey.PropertyWindow("property",  this.view );
-
+        this.view         = new sankey.View("canvas");
+		this.toolbar      = new sankey.Toolbar("toolbar", this.view );
+		this.propertyView = new sankey.PropertyWindow("property", this.view );
 
 		// layout FIRST the body
 		//
@@ -124,8 +122,14 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:5,
 				spacing_closed:5,
-				paneSelector: "#canvas"
+				paneSelector: "#draw2dCanvasWrapper"
 			}
+		});
+
+		this.view.centerDocument();
+
+		$("#templateConfigurationMenu").on("click",function(){
+			new sankey.dialog.JSONTemplate().show();
 		});
 	},
 
@@ -155,43 +159,56 @@ sankey.Application = Class.extend(
 	fileNew: function(shapeTemplate)
 	{
 		this.currentFileHandle = {
-			title: "Untitled"+conf.fileSuffix
+			title: "Untitled"+conf.fileSuffix,
+            jsonTemplate: {}
 		};
 		this.view.clear();
 		if(shapeTemplate){
 			var reader = new draw2d.io.json.Reader();
 			reader.unmarshal(this.view, shapeTemplate);
 		}
+		this.view.centerDocument();
 	},
 
 
 	fileSave: function()
 	{
 		var _this = this;
-		new sankey.dialog.FileSave(this.currentFileHandle).show(this.view, function(){
-			_this.updateWeights();
+        var writer = new draw2d.io.json.Writer();
+        writer.marshal(this.view, function (json, base64) {
+            var data ={
+                content:{
+                    diagram:json,
+                    jsonTemplate: _this.currentFileHandle.jsonTemplate
+                }
+            };
+            new sankey.dialog.FileSave(_this.currentFileHandle).show(data, function() {
+                _this.updateWeights();
+            });
 		});
 	},
 
 
 	fileOpen: function()
 	{
-		var _this= this;
 		new sankey.dialog.FileOpen(this.currentFileHandle).show(
 			// success callback
-			$.proxy(function(fileData){
+			$.proxy(function(json){
 				try{
 					this.view.clear();
 					var reader = new draw2d.io.json.Reader();
-					reader.unmarshal(this.view, fileData);
+					reader.unmarshal(this.view, json.content.diagram);
+                    this.setTemplate(json.content.jsonTemplate);
 					this.view.getCommandStack().markSaveLocation();
-					_this.updateWeights();
+					this.updateWeights();
+					this.view.centerDocument();
 				}
 				catch(e){
 					console.log(e);
 					this.view.clear();
 				}
-			},this));
+		    },this)
+        );
 	},
 
 	updateWeights:function()
@@ -205,6 +222,40 @@ sankey.Application = Class.extend(
 				_this.view.updateWeights(response);
 			}
 		});
+	},
+
+	getTemplate: function()
+	{
+		return this.currentFileHandle.jsonTemplate;
+	},
+
+	setTemplate: function(json )
+	{
+		this.currentFileHandle.jsonTemplate = json;
+        this.currentFileHandle.autosuggest = Object.keys(this.flatten(json));
+        return this;
+	},
+
+    getAutosuggestSource:function()
+    {
+        return this.currentFileHandle.autosuggest;
+    },
+
+	flatten:function (obj, path, result) {
+		var key, val, _path;
+		path = path || [];
+		result = result || {};
+		for (key in obj) {
+			val = obj[key];
+			_path = path.concat([key]);
+			if (val instanceof Object) {
+				this.flatten(val, _path, result);
+			} else {
+				result[_path.join('.')] = val;
+			}
+		}
+		return result;
 	}
+
 });
 

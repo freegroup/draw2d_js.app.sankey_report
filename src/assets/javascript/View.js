@@ -87,6 +87,48 @@ sankey.View = draw2d.Canvas.extend({
         // create a command for the undo/redo support
         var command = new draw2d.command.CommandAdd(this, figure, x, y);
         this.getCommandStack().execute(command);
+    },
+
+    getBoundingBox: function()
+    {
+        var xCoords = [];
+        var yCoords = [];
+        this.getFigures().each(function(i,f){
+            var b = f.getBoundingBox();
+            xCoords.push(b.x, b.x+b.w);
+            yCoords.push(b.y, b.y+b.h);
+        });
+        var minX   = Math.min.apply(Math, xCoords);
+        var minY   = Math.min.apply(Math, yCoords);
+        var width  = Math.max(10,Math.max.apply(Math, xCoords)-minX);
+        var height = Math.max(10,Math.max.apply(Math, yCoords)-minY);
+
+        return new draw2d.geo.Rectangle(minX,minY,width,height);
+    },
+
+
+    centerDocument:function()
+    {
+        var bb=null;
+        var c = $("#draw2dCanvasWrapper");
+        if(this.getFigures().getSize()>0){
+            // get the bounding box of the document and translate the complete document
+            // into the center of the canvas. Scroll to the top left corner after them
+            //
+            bb = this.getBoundingBox();
+
+            c.scrollTop(bb.y- c.height()/2);
+            c.scrollLeft(bb.x- c.width()/2);
+        }
+        else{
+            bb={
+                x:this.getWidth()/2,
+                y:this.getHeight()/2
+            };
+            c.scrollTop(bb.y- c.height()/2);
+            c.scrollLeft(bb.x- c.width()/2);
+
+        }
     }
 });
 
