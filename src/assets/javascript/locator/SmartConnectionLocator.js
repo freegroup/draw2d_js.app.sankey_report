@@ -46,7 +46,7 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
         //              3             2
         //
         var calcBoundingCorner=function() {
-            console.log("calc");
+
             _this.boundedCorners={
                 init:false,
                 parent:0,
@@ -58,7 +58,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
             var parentVertices = child.getParent().getVertices();
             parentVertices = new draw2d.util.ArrayList([parentVertices.first(),parentVertices.last()]);
 
-            console.log(parentVertices);
             var childVertices  = child.getBoundingBox().getVertices();
             var i_parent, i_child;
             var p1, p2, distance;
@@ -67,7 +66,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
                     p1 = parentVertices.get(i_parent);
                     p2 = childVertices.get(i_child);
                     distance = Math.abs(p1.distance(p2));
-                    console.log(distance,_this.boundedCorners.dist);
                     if (distance < _this.boundedCorners.dist) {
                         _this.boundedCorners = {
                             parent: i_parent,
@@ -79,7 +77,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
                     }
                 }
             }
-            console.log("child index:",_this.boundedCorners);
             _this.boundedCorners.init=true;
         };
 

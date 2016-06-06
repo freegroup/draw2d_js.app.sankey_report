@@ -46,7 +46,7 @@ sankey.anchor.InputConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.exte
 			}
 			return diff;
 		});
-        console.log(connsOrder);
+
 		inquiringConnection.__inputIndex = connsOrder.findIndex(function(conn){return conn.id===inquiringConnection.id;});
 
 

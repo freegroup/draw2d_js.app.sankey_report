@@ -147,7 +147,11 @@ function processNode(data)
             data.figure.getOutputPorts().each(function(index, port){
                 var connections = port.getConnections().asArray();
                 connections.sort(function(a,b){
-                    return b.getUserData().transitions.length - a.getUserData().transitions.length;
+                    if(a.getUserData().transitions && b.getUserData().transitions) {
+                        return b.getUserData().transitions.length - a.getUserData().transitions.length;
+                    }
+
+                    return 0;
                 });
 
                 connections.forEach(function(conn){
@@ -213,12 +217,16 @@ function matchNode(data)
 {
     console.log("=====matchNode:"+data.figure.NAME);
     var matched=true;
+    console.log(data.figure.getUserData());
     var transitions = $.extend({},{transitions:[]},data.figure.getUserData()).transitions;
+    console.log(transitions);
+    transitions = transitions.filter(function(e){return e.jsonPath!=="";});
+    transitions = transitions.filter(function(e){return e.jsonPath;});
 
     console.log(transitions);
     // no constraint -> always true
     if(transitions.length===0){
-        return true;
+        return false;
     }
 
     transitions.forEach(function(element){
@@ -268,6 +276,8 @@ function attributeByPath(o, s)
 {
     console.log("===attributeByPath");
 
+    if(!s)
+        return;
     s = s.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
     s = s.replace(/^\./, '');           // strip a leading dot
     var a = s.split('.');

@@ -35,10 +35,9 @@ var port = 6800;
 //
 app.use(express.static(__dirname+'/html'));
 // to support JSON-encoded bodies
-app.use( bodyParser.json() );
+app.use(bodyParser.json({limit: '50mb'}));
 // to support URL-encoded bodies
-app.use(bodyParser.urlencoded({ extended: true}));
-
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
 app.get('/backend/file/list', function (req, res) {
     glob(persistence.dir+"/*.sankey", {}, function (er, files) {
