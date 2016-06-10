@@ -18,7 +18,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
 
         // description see "bind" method
         this.boundedCorners={
-            init:false,
             parent:0,
             child:0,
             dist: Number.MAX_SAFE_INTEGER,
@@ -48,7 +47,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
         var calcBoundingCorner=function() {
 
             _this.boundedCorners={
-                init:false,
                 parent:0,
                 child:0,
                 dist: Number.MAX_SAFE_INTEGER,
@@ -77,7 +75,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
                     }
                 }
             }
-            _this.boundedCorners.init=true;
         };
 
         // override the parent implementation to avoid
@@ -91,7 +88,6 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
             return child;
         });
 
-        child.getParent().on("added",calcBoundingCorner);
         child.on("dragend",calcBoundingCorner);
     },
 
@@ -115,18 +111,17 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
     {
         this._super(index, figure);
 
-        if(this.boundedCorners.init===true) {
-            var parentVertices = figure.getParent().getVertices();
-            parentVertices = new draw2d.util.ArrayList([parentVertices.first(),parentVertices.last()]);
-            var childVertices = figure.getBoundingBox().getVertices();
-            var p1 = parentVertices.get(this.boundedCorners.parent);
-            var p2 = childVertices.get(this.boundedCorners.child);
+        var parentVertices = figure.getParent().getVertices();
+        parentVertices = new draw2d.util.ArrayList([parentVertices.first(),parentVertices.last()]);
+        var childVertices = figure.getBoundingBox().getVertices();
+        var p1 = parentVertices.get(this.boundedCorners.parent);
+        var p2 = childVertices.get(this.boundedCorners.child);
 
-            var xOffset = p1.x - p2.x;
-            var yOffset = p1.y - p2.y;
-            // restore the initial distance from the corner by adding the new offset
-            // to the position of the child
-            figure.translate(xOffset - this.boundedCorners.xOffset, yOffset - this.boundedCorners.yOffset);
-        }
+        var xOffset = p1.x - p2.x;
+        var yOffset = p1.y - p2.y;
+        // restore the initial distance from the corner by adding the new offset
+        // to the position of the child
+        figure.translate(xOffset - this.boundedCorners.xOffset, yOffset - this.boundedCorners.yOffset);
+
     }
 });

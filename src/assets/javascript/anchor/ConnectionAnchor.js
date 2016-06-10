@@ -1,7 +1,7 @@
 
-sankey.anchor.OutputConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.extend({
+sankey.anchor.ConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.extend({
 
-	NAME : "sankey.anchor.OutputConnectionAnchor",
+	NAME : "sankey.anchor.ConnectionAnchor",
 
 	/**
 	 * @constructor
@@ -31,12 +31,15 @@ sankey.anchor.OutputConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.ext
 		var r     =  port.getParent().getBoundingBox();
 		var conns =  port.getConnections().asArray();
 		var height= r.getHeight() / conns.length;
+        var indexName = "__"+port.NAME;
 
 		var connsOrder = conns.map(function(conn){return {
 			id:conn.id,
 			y: conn.getSource()===port?conn.getTarget().getAbsoluteY():conn.getSource().getAbsoluteY()
 		};});
 
+		// we need stable sort order even if the difference of the "y" is zero
+		// In this case we sort the connections by ID
 		connsOrder.sort(function(a,b){
 			var diff = a.y-b.y;
 			if(diff===0){
@@ -44,22 +47,22 @@ sankey.anchor.OutputConnectionAnchor = draw2d.layout.anchor.ConnectionAnchor.ext
 			}
 			return diff;
 		});
-		inquiringConnection.__outputIndex = connsOrder.findIndex(function(conn){return conn.id===inquiringConnection.id;});
+
+		inquiringConnection[indexName] = connsOrder.findIndex(function(conn){return conn.id===inquiringConnection.id;});
 
 
 		// for a redraw of the other connections if any index calculated before has
 		// changed with the new settings
 		conns.forEach(function(connectionToCheck,index){
 			var newIndex = connsOrder.findIndex(function(conn){return conn.id===connectionToCheck.id;});
-			if(connectionToCheck.__outputIndex!==newIndex){
+			if(connectionToCheck[indexName]!==newIndex){
 				connectionToCheck.routingRequired=true;
 				if(connectionToCheck.getCanvas()!==null)
 					connectionToCheck.repaint();
 			}
 		});
-		var point = r.getTopRight();
-
-		point.y = point.y+(height*inquiringConnection.__outputIndex)+(height/2);
+		var point = port.getAbsolutePosition();
+		point.y = r.y+(height*inquiringConnection[indexName])+(height/2);
 		return point;
 	},
 

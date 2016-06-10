@@ -33,9 +33,19 @@ sankey.shape.Connection = draw2d.Connection.extend({
         this.setTargetDecorator(new draw2d.decoration.connection.ArrowDecorator());
     },
 
-    setText:function(text)
+    setWeight:function(weight)
     {
-        this.label.setText(text);
+        this.label.setText(""+weight);
+    },
+
+    getWeight:function()
+    {
+        return parseInt(this.label.getText());
+    },
+
+    repaint:function(attr)
+    {
+        this._super($.extend({},attr,{"stroke-linecap":"butt"}));
     },
 
     /**
@@ -54,6 +64,7 @@ sankey.shape.Connection = draw2d.Connection.extend({
         this.children.each(function(i,e){
             var labelJSON = e.figure.getPersistentAttributes();
             labelJSON.locator=e.locator.NAME;
+            labelJSON.boundedCorners= e.locator.boundedCorners;
             memento.labels.push(labelJSON);
         });
 
@@ -93,7 +104,13 @@ sankey.shape.Connection = draw2d.Connection.extend({
             // add the new figure as child to this figure
             this.add(figure, locator);
 
-            // the first label in the JSON is the Label in the center of the shape
+            console.log(json.boundedCorners);
+            console.log(locator);
+            if( locator.boundedCorners){
+                $.extend(locator.boundedCorners, json.boundedCorners);
+            }
+
+            // the first label in the JSON is the Label with the weight text
             //
             if(i===0) {
                 this.label = figure;

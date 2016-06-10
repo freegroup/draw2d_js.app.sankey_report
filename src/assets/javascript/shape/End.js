@@ -24,7 +24,7 @@ sankey.shape.End = draw2d.shape.node.End.extend({
             radius:10,
             bgColor:"#f50057"
         });
-        this.getInputPort(0).setConnectionAnchor(new sankey.anchor.InputConnectionAnchor());
+        this.getInputPort(0).setConnectionAnchor(new sankey.anchor.ConnectionAnchor());
     },
 
     getMinWidth: function()

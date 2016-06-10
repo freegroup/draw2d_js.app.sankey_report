@@ -23,7 +23,7 @@ sankey.shape.Start = draw2d.shape.node.Start.extend({
         this.attr({
             radius:10
         });
-        this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.OutputConnectionAnchor());
+        this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.ConnectionAnchor());
     },
 
     getMinWidth: function()

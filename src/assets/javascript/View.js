@@ -38,14 +38,29 @@ sankey.View = draw2d.Canvas.extend({
     {
         var _this = this;
         this.getLines().each(function(index, conn){
-            conn.setText("0");
+            conn.setWeight("0");
         });
         weights.forEach(function(weight){
             var conn = _this.getLine(weight.conn);
             if(conn!==null){
-                conn.setText(weight.value);
+                conn.setWeight(weight.value);
             }
         });
+
+        var min=Number.MAX_SAFE_INTEGER,
+            max=0;
+        this.getLines().each(function(index, conn){
+            min = Math.min(min,conn.getWeight());
+            max = Math.max(max,conn.getWeight());
+        });
+
+        var minStroke = 2;
+        var maxStroke = 20;
+        this.getLines().each(function(index, conn){
+            // [A, B] --> [a, b]
+            conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/(max-min) + minStroke);
+        });
+
     },
 
     /**

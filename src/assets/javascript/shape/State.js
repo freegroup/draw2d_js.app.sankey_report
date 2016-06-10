@@ -6,8 +6,8 @@ sankey.shape.State = draw2d.shape.node.Between.extend({
     init:function()
     {
         this._super();
-        this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.OutputConnectionAnchor());
-        this.getInputPort(0).setConnectionAnchor(new sankey.anchor.InputConnectionAnchor());
+        this.getOutputPort(0).setConnectionAnchor(new sankey.anchor.ConnectionAnchor());
+        this.getInputPort(0).setConnectionAnchor(new sankey.anchor.ConnectionAnchor());
 
         this.createPort("input", new draw2d.layout.locator.TopLocator());
         this.createPort("input", new draw2d.layout.locator.BottomLocator());
