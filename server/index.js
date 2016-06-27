@@ -28,7 +28,9 @@ for (var dev in ifaces) {
 }
 
 
-var port = 6800;
+// set the port of our application
+// process.env.PORT lets the port be set by Heroku
+var port = process.env.PORT || 6800;
 
 // provide the DigitalTrainingStudio WebApp with this very simple
 // HTTP server. good enough for an private raspi access
