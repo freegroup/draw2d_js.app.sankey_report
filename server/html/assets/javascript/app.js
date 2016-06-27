@@ -1303,13 +1303,13 @@ sankey.policy.EditPolicy = draw2d.policy.canvas.BoundingboxSelectionPolicy.exten
     {
     },
 
-    onRightMouseDown:function(figure)
+    onRightMouseDown:function(figure,x,y)
     {
         if(figure===null){
             return;
         }
-        var x = event.x;
-        var y = event.y;
+      //  var x = event.x;
+      //  var y = event.y;
 
         var items = {
             color: {name: "Line Color"  , icon :"x ion-android-color-palette"  }

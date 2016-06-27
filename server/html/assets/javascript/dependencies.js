@@ -16876,7 +16876,15 @@ Raphael.fn.polygon = function(pointString) {
                 }
             }
             return result;
+        },
+
+        ensureDefault:function( json, attribute, value)
+        {
+            if (!json.hasOwnProperty(attribute)) {
+                json[attribute] = value;
+            }
         }
+
         
         
 };
@@ -17518,12 +17526,12 @@ draw2d.geo.Point = Class.extend({
     	return this.x*that.y-this.y*that.x;
     },
 
-    
+
     lerp: function(that,t)
     {
     	return new draw2d.geo.Point(this.x+(that.x-this.x)*t,this.y+(that.y-this.y)*t);
     },
-    
+
 
     /**
      * @method 
@@ -18483,6 +18491,68 @@ draw2d.geo.Ray = draw2d.geo.Point.extend({
  * @param {Number} py y coordinate of the point to test
  **/
 draw2d.geo.Line = {
+
+    /**
+     * Returns the relative position of the point on the line between [0..1]
+     * The point "p" must be part of the line!!
+     *
+     * 0 => given point is on the start location
+     * ..=> given point is in between
+     * 1 => given point is at the end
+     *
+     * @return {Number}
+     */
+    inverseLerp: function( X1, Y1,  X2,  Y2, px, py)
+    {
+        var nenner = Math.abs(X2-X1);
+        var zaehler= Math.abs(X2-px);
+        if(nenner===0){
+            nenner = Math.abs(Y2-Y1);
+            zaehler= Math.abs(Y2-py);
+            if(nenner==0){
+                return 1;
+            }
+        }
+
+        return zaehler/nenner;
+    },
+
+
+    /**
+     * @method
+     * Returns the projection of the point onto the line.
+     *
+     * @param {Number} px the x coordinate of the test point
+     * @param {Number} py the y coordinate of the test point
+     * @return {draw2d.geo.Point}
+     **/
+    pointProjection: function( X1, Y1,  X2,  Y2, px, py)
+    {
+        var r = new draw2d.geo.Point(0,0);
+        if (X1 == X2 && Y1 == Y2) X1 -= 0.00001;
+
+        var U = ((px - X1) * (X2 - X1)) + ((py - Y1) * (Y2 - Y1));
+
+        var Udenom = Math.pow(X2 - X1, 2) + Math.pow(Y2 - Y1, 2);
+
+        U /= Udenom;
+
+        r.x = X1 + (U * (X2 - X1));
+        r.y = Y1 + (U * (Y2 - Y1));
+
+        var minx, maxx, miny, maxy;
+
+        minx = Math.min(X1, X2);
+        maxx = Math.max(X1, X2);
+
+        miny = Math.min(Y1, Y2);
+        maxy = Math.max(Y1, Y2);
+
+        var isValid = (r.x >= minx && r.x <= maxx) && (r.y >= miny && r.y <= maxy);
+
+        return isValid ? r : null;
+    },
+
     distance : function( X1, Y1,  X2,  Y2, px, py)
     {
         // Adjust vectors relative to X1,Y1
@@ -25583,7 +25653,7 @@ draw2d.layout.locator.PolylineMidpointLocator= draw2d.layout.locator.ManhattanMi
  * 
  * A ParallelMidpointLocator that is used to place label at the midpoint of a  routed
  * connection. The midpoint is always in the center of an edge.
- * The label is aligned to the connection angle.
+ * The label is aligned to the connection angle at the calculated conection segment.
  * 
  *
  * @author Andreas Herz
@@ -25595,7 +25665,7 @@ draw2d.layout.locator.ParallelMidpointLocator= draw2d.layout.locator.ConnectionL
     
     /**
      * @constructor
-     * Constructs a ManhattanMidpointLocator with associated Connection c.
+     * Constructs a ParallelMidpointLocator with optional padding to the connection.
      * 
      * if the parameter <b>distanceFromConnection</b> is less than zero the label is
      * placed above of the connection. Else the label is below the connection.
@@ -25628,8 +25698,9 @@ draw2d.layout.locator.ParallelMidpointLocator= draw2d.layout.locator.ConnectionL
        var points = conn.getVertices();
        
        var segmentIndex = Math.floor((points.getSize() -2) / 2);
-       if (points.getSize() <= segmentIndex+1)
-          return; 
+       if (points.getSize() <= segmentIndex+1) {
+           return;
+       }
     
        var p1 = points.get(segmentIndex);
        var p2 = points.get(segmentIndex + 1);
@@ -26966,6 +27037,10 @@ draw2d.policy.canvas.SelectionPolicy = draw2d.policy.canvas.CanvasPolicy.extend(
 
         figure.unselect();
 
+        // @since 6.1.42
+        canvas.fireEvent("unselect",{figure:figure});
+
+        // deprecated
         canvas.fireEvent("select",{figure:null});
     }
 });
@@ -30570,6 +30645,9 @@ draw2d.policy.connection.ConnectionCreatePolicy = draw2d.policy.canvas.KeyboardP
                     function(){circle.remove()}
                 );
                 circle.animate(anim);
+                // return an emmpty raphael.set. The circle removes itself after animation is done
+                //
+                return this.canvas.paper.set();
                 break;
             case 1:
                 var circle1 = this.canvas.paper.circle(x, y, 3, 3).attr({fill: null, stroke:"#3f72bf"});
@@ -30583,9 +30661,15 @@ draw2d.policy.connection.ConnectionCreatePolicy = draw2d.policy.canvas.KeyboardP
                 var anim2 = Raphael.animation(
                     {transform: "s12", opacity:0.0, "stroke-width":4 },
                     500,
-                    "linear"
+                    "linear",
+                    function(){circle2.remove()}
                 );
                 circle2.animate(anim2);
+
+                // return the "circle1". This shape must be remove by the caller
+                // "circle2" is removed automaticly
+                //
+                return circle1;
                 break;
         }
     }
@@ -30803,11 +30887,8 @@ draw2d.policy.connection.ClickConnectionCreatePolicy = draw2d.policy.connection.
     onClick: function(figure, x, y, shiftKey, ctrlKey)
     {
         var _this = this;
-        //just consider ports
-        //
-        var port = figure;// .getCanvas().getBestFigure(x, y);
+        var port = figure;
 
-        // nothing to do
         if(port === null && this.port1 === null){
             return;
         }
@@ -30826,6 +30907,8 @@ draw2d.policy.connection.ClickConnectionCreatePolicy = draw2d.policy.connection.
             return;
         }
 
+        //just consider ports
+        //
         if(!(port instanceof draw2d.Port)){
             return;
         }
@@ -30873,22 +30956,14 @@ draw2d.policy.connection.ClickConnectionCreatePolicy = draw2d.policy.connection.
 
             var a= function() {
                 _this.tempConnection.shape.animate({"stroke-width" : 2}, 800, b);
-            }
+            };
             var b=function() {
                 _this.tempConnection.shape.animate({"stroke-width":1}, 800, a);
-            }
+            };
             a();
 
             var pos = port.getAbsolutePosition();
-            this.ripple(pos.x, pos.y, 1);
-            this.pulse = canvas.paper.circle(pos.x, pos.y, 3, 3).attr({fill: null, stroke:"#3f72bf"});
-            anim = Raphael.animation(
-                {transform: "s6", opacity:0.0, "stroke-width":1 },
-                1200,
-                "linear"
-            ).repeat(Infinity);
-
-            this.pulse.animate(anim);
+            this.pulse =this.ripple(pos.x, pos.y, 1);
             return;
         }
 
@@ -33489,8 +33564,8 @@ draw2d.policy.figure.AntSelectionFeedbackPolicy = draw2d.policy.figure.Selection
             // of the parent and the figure didn't have intersections
             if(figure.getParent()!==null){
                 var line = new draw2d.shape.basic.Line({opacity:0.5, bgColor:null, dasharray:"- ", color:"#2C70FF"});
-                line.setStartPoint(figure.getBoundingBox().getCenter());
-                line.setEndPoint(figure.getParent().getBoundingBox().getCenter());
+                //line.setStartPosition(figure.getBoundingBox().getCenter());
+                //line.setEndPosition(figure.getParent().getBoundingBox().getCenter());
                 line.show= function(canvas) {
                     line.setCanvas(canvas);
                 };
@@ -33499,7 +33574,7 @@ draw2d.policy.figure.AntSelectionFeedbackPolicy = draw2d.policy.figure.Selection
                 };
                 line.show(canvas);
                 figure.selectionHandles.add(line);
-
+                this._updateBeeLine(line, figure);
             }
         }
         this.moved(canvas, figure);
@@ -33526,41 +33601,67 @@ draw2d.policy.figure.AntSelectionFeedbackPolicy = draw2d.policy.figure.Selection
 
         if(figure.selectionHandles.getSize()>1){
             var line = figure.selectionHandles.get(1);
-            this._updateBeeLine(
-                line,
-                figure.getBoundingBox(),
-                figure.getParent().getBoundingBox());
+            this._updateBeeLine( line, figure);
         }
     },
 
     /**
      *
      * @param {draw2d.shape.basic.Line} line
-     * @param {draw2d.geo.Rectangle} rect1
-     * @param {draw2d.geo.Rectangle} rect2
+     * @param {draw2d.Figure} figure
      * @private
      */
-    _updateBeeLine: function(line, rect1, rect2){
+    _updateBeeLine: function(line, figure){
+        var parent = figure.getParent();
 
-        var center1 = rect1.getCenter();
-        var center2 = rect2.getCenter();
-        // the rectangle overlaps -> return the center of booth
-        if(rect1.intersects(rect2)){
-            line.setStartPoint(center1)
-                .setEndPoint(center2);
+        if(parent===null){
+            return;
         }
-        // one rect is inside the other rect
-        //
-        else if(rect1.hitTest(center2) || rect2.hitTest(center1)){
-            line.setStartPoint(center1)
-                .setEndPoint(center2);
+
+        if(parent instanceof draw2d.shape.basic.Line){
+            var center =figure.getBoundingBox().getCenter();
+            var projection= parent.pointProjection(center);
+            if(projection===null){
+                var p1= line.getStartPosition();
+                var p2= line.getEndPosition();
+                var d1= center.distance(p1);
+                var d2= center.distance(p1);
+                projection=d1<d2?p1:p2;
+            }
+            var intersection =figure.getBoundingBox().intersectionWithLine(center, projection);
+            if(intersection.getSize()>0) {
+                line.setStartPosition(figure.getBoundingBox().intersectionWithLine(center, projection).get(0))
+                    .setEndPosition(projection);
+            }
+            else{
+                line.setStartPosition(figure.getBoundingBox().getCenter())
+                    .setEndPosition(projection);
+            }
         }
         else {
-            rect1.scale(3,3);
-            rect2.scale(3,3);
+            var rect1 = figure.getBoundingBox(),
+                rect2 = parent.getBoundingBox();
 
-            line.setStartPoint( rect1.intersectionWithLine(center1, center2).get(0))
-                .setEndPoint( rect2.intersectionWithLine(center1, center2).get(0));
+            var center1 = rect1.getCenter();
+            var center2 = rect2.getCenter();
+            // the rectangle overlaps -> return the center of booth
+            if (rect1.intersects(rect2)) {
+                line.setStartPosition(center1)
+                    .setEndPosition(center2);
+            }
+            // one rect is inside the other rect
+            //
+            else if (rect1.hitTest(center2) || rect2.hitTest(center1)) {
+                line.setStartPosition(center1)
+                    .setEndPosition(center2);
+            }
+            else {
+                rect1.scale(3, 3);
+                rect2.scale(3, 3);
+
+                line.setStartPosition(rect1.intersectionWithLine(center1, center2).get(0))
+                    .setEndPosition(rect2.intersectionWithLine(center1, center2).get(0));
+            }
         }
     }
 }); 
@@ -34907,7 +35008,7 @@ draw2d.policy.port.IntrusivePortsFeedbackPolicy = draw2d.policy.port.PortFeedbac
  *   Library is under GPL License (GPL)
  *   Copyright (c) 2012 Andreas Herz
  ****************************************/draw2d.Configuration = {
-    version : "6.1.40",
+    version : "6.1.46",
     i18n : {
         command : {
             move : "Move Shape",
@@ -41030,18 +41131,10 @@ draw2d.VectorFigure = draw2d.shape.node.Node.extend({
                 attributes.stroke = this.color.hash();
             }
         }
-        
-        if(typeof attributes["stroke-width"]==="undefined"){
-            attributes["stroke-width"] = this.stroke;
-        }
-        
-        if(typeof attributes.fill === "undefined"){
-       	   attributes.fill = this.bgColor.hash();
-        }
 
-        if(this.dasharray!==null){
-            attributes["stroke-dasharray"]=this.dasharray;
-        }
+        draw2d.util.JSON.ensureDefault(attributes,"stroke-width" , this.stroke);
+        draw2d.util.JSON.ensureDefault(attributes,"fill" ,this.bgColor.hash());
+        draw2d.util.JSON.ensureDefault(attributes,"dasharray" , this.dasharray);
 
         this._super(attributes);
         
@@ -42545,17 +42638,15 @@ draw2d.shape.node.Fulcrum = draw2d.shape.node.Hub.extend({
     repaint: function(attributes)
     {
         if(this.repaintBlocked===true || this.shape===null){
-            return;
+            return this;
         }
     
         attributes= attributes || {};
         
         // set some good defaults if the parent didn't
-        if(typeof attributes.fill ==="undefined"){
-            attributes.fill=this.bgColor.hash();
-        }
+        draw2d.util.JSON.ensureDefault(attributes,"fill" ,this.bgColor.hash());
         
-       this._super(attributes);
+        return this._super(attributes);
     }
     
 });
@@ -43026,9 +43117,9 @@ draw2d.shape.basic.Label= draw2d.SetFigure.extend({
             
 
         this.installEditPolicy(new draw2d.policy.figure.AntSelectionFeedbackPolicy());
- 
+
     
-        // some performance approvements
+        // some performance improvements
         this.lastAppliedLabelRotation = "";
         this.lastAppliedTextAttributes= {};
     },
@@ -43989,11 +44080,12 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
                 }, setter),
                 
              $.extend({},{
-                start:  this.getStartPosition,
-                end:  this.getEndPosition,
+                start:         this.getStartPosition,
+                end:           this.getEndPosition,
                 outlineColor:  this.getOutlineColor,
                 outlineStroke: this.getOutlineStroke,
                 stroke:        this.getStroke,
+                color:         this.getColor,
                 dasharray:     this.getDashArray,
                 vertices:      this.getVertices
             }, getter));
@@ -44277,16 +44369,14 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
        }
        else{
     	   // may a router has calculate another path. don't override them.
-    	   if(typeof attributes.path ==="undefined"){
+           if(typeof attributes.path ==="undefined"){
     		   attributes.path =["M",this.start.x,this.start.y,"L",this.end.x,this.end.y].join(" ");
     	   }
-    	   attributes.stroke = this.lineColor.hash();
-    	   attributes["stroke-width"]=this.stroke;
+           draw2d.util.JSON.ensureDefault(attributes,"stroke" ,this.lineColor.hash());
+           draw2d.util.JSON.ensureDefault(attributes,"stroke-width" ,this.stroke);
        }
-       
-       if(this.dasharray!==null){
-           attributes["stroke-dasharray"]=this.dasharray;
-       }
+
+       draw2d.util.JSON.ensureDefault(attributes,"dasharray" ,this.dasharray);
        
        this._super(attributes);
 
@@ -44500,8 +44590,8 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
     *        startY: y
     *      });
     *      
-    * @param {Number} x the x coordinate of the start point
-    * @param {Number} y the y coordinate of the start point
+    * @param {Number|draw2d.geo.Point} x the x coordinate of the start point
+    * @param {Number} [y] the y coordinate of the start point
     **/
    setStartPosition: function( x, y)
    {
@@ -44829,7 +44919,7 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
    getSegments: function()
    {
        var result = new draw2d.util.ArrayList();
-       result.add({start: this.getStartPoint(), end: this.getEndPoint()});
+       result.add({start: this.getStartPosition(), end: this.getEndPosition()});
        
        return result;
    },
@@ -44944,8 +45034,41 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
    {
      return draw2d.shape.basic.Line.hit(this.corona+ this.stroke, this.start.x,this.start.y, this.end.x, this.end.y, px,py);
    },
-   
-   /**
+
+    /**
+     * @method
+     * Returns the projection of the point on the line.
+     *
+     * @param {Number} px the x coordinate of the test point
+     * @param {Number} py the y coordinate of the test point
+     * @return {draw2d.geo.Point}
+     **/
+    pointProjection: function( px, py)
+    {
+        var pt =  new draw2d.geo.Point(px,py);
+        var p1=this.getStartPosition();
+        var p2=this.getEndPosition();
+        return draw2d.geo.Line.pointProjection(p1.x,p1.y,p2.x,p2.y,pt.x,pt.y);
+    },
+
+
+    /**
+     * @method
+     * Returns the point onto the line which has the 'percentage' position onto the line.
+     *
+     * @param {Number} percentage value between [0..1]
+     * @returns {*}
+     */
+    lerp: function(percentage)
+    {
+        var p1=this.getStartPosition();
+        var p2=this.getEndPosition();
+        percentage = Math.min(1,Math.max(0,percentage));
+        return new draw2d.geo.Point(p1.x+(p2.x-p1.x)*percentage,p1.y+(p2.y-p1.y)*percentage);
+    },
+
+
+    /**
     * @method
     * Return all intersection points between the given Line.
     * 
@@ -45469,7 +45592,7 @@ draw2d.shape.basic.PolyLine = draw2d.shape.basic.Line.extend({
     repaint: function(attributes)
     {
         if(this.repaintBlocked===true || this.shape===null){
-          return;
+          return this;
         }
 
         if(this.svgPathString===null || this.routingRequired===true){
@@ -45480,12 +45603,10 @@ draw2d.shape.basic.PolyLine = draw2d.shape.basic.Line.extend({
             attributes = {};
         }
         attributes.path=this.svgPathString;
-        attributes["stroke-linecap"]="round";
-        attributes["stroke-linejoin"]="round";
+        draw2d.util.JSON.ensureDefault(attributes,"stroke-linecap" , "round");
+        draw2d.util.JSON.ensureDefault(attributes,"stroke-linejoin", "round");
 
-        this._super( attributes);
-
-        return this;
+        return this._super( attributes);
     },
     
 
@@ -45517,7 +45638,10 @@ draw2d.shape.basic.PolyLine = draw2d.shape.basic.Line.extend({
       if(this.oldPoint!==null){
         // store the painted line segment for the "mouse selection test"
         // (required for user interaction)
-        this.lineSegments.add({start: this.oldPoint, end:p});
+        this.lineSegments.add({
+            start: this.oldPoint,
+            end:p
+        });
       }
       this.svgPathString=null;
       this.oldPoint = p;
@@ -45543,6 +45667,100 @@ draw2d.shape.basic.PolyLine = draw2d.shape.basic.Line.extend({
             this.draggedSegment =  this.hitSegment(x,y);
         }
         return result;
+    },
+
+    /**
+     * @method
+     * Returns the length of the polyline.
+     *
+     * @return {Number}
+     * @since 6.1.43
+     **/
+    getLength: function()
+    {
+        var result = 0;
+        for(var i = 0; i< this.lineSegments.getSize();i++) {
+            var segment = this.lineSegments.get(i);
+            var p1 = segment.start;
+            var p2 = segment.end;
+            result += Math.sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+        }
+        return result;
+    },
+
+
+    /**
+     * @method
+     * Returns the projection of the point on the line.
+     *
+     * @param {Number} px the x coordinate of the test point
+     * @param {Number} py the y coordinate of the test point
+     * @return {draw2d.geo.Point}
+     **/
+    pointProjection: function( px, py)
+    {
+        var result=null,
+            projection=null,
+            p1=null,
+            p2 = null,
+            segment=null;
+        var lastDist = Number.MAX_SAFE_INTEGER;
+        var pt = new draw2d.geo.Point(px,py);
+        for(var i = 0; i< this.lineSegments.getSize();i++) {
+            segment = this.lineSegments.get(i);
+            p1 = segment.start;
+            p2 = segment.end;
+            projection= draw2d.geo.Line.pointProjection(p1.x,p1.y,p2.x,p2.y,pt.x,pt.y);
+            if(projection!==null) {
+                var dist = projection.distance(pt);
+                if (result == null || dist < lastDist) {
+                    result = projection;
+                    result.index=i;
+                    lastDist = dist;
+                }
+            }
+        }
+
+        if (result !== null) {
+            var length = 0;
+            var segment;
+            for(var i = 0; i< result.index;i++) {
+                segment = this.lineSegments.get(i);
+                length += segment.start.distance(segment.end);
+            }
+            segment = this.lineSegments.get(result.index);
+            p1 = segment.start;
+            p2 = segment.end;
+            length +=  p1.distance(p2)*draw2d.geo.Line.inverseLerp(p2.x,p2.y,p1.x,p1.y,result.x,result.y);
+            result.percentage=(1.0/this.getLength())*length;
+        }
+        return result;
+    },
+
+    /**
+     * @method
+     * Returns the point onto the line which has the relative 'percentage' position onto the line.
+     *
+     * @param {Number} percentage the relative position between [0..1]
+     * @returns {draw2d.geo.Point}
+     */
+    lerp: function(percentage)
+    {
+        var length = this.getLength()*percentage;
+        var lastValidLength=length;
+        var segment=null,p1=null,p2=null;
+        for(var i = 0; i< this.lineSegments.getSize();i++) {
+            segment = this.lineSegments.get(i);
+            p1 = segment.start;
+            p2 = segment.end;
+            length = length-p1.distance(p2);
+            if(length<=0){
+                percentage = 1.0/p1.distance(p2)*lastValidLength;
+                return new draw2d.geo.Point(p1.x+(p2.x-p1.x)*percentage,p1.y+(p2.y-p1.y)*percentage)
+            }
+            lastValidLength=length;
+        }
+        return p2;
     },
 
     /**
@@ -45920,10 +46138,8 @@ draw2d.shape.basic.Polygon = draw2d.VectorFigure.extend({
         }
         
         attributes= attributes || {};
-        
-        if(typeof attributes.path ==="undefined"){
-            attributes.path = this.svgPathString;
-        }
+
+        draw2d.util.JSON.ensureDefault(attributes,"path" ,this.svgPathString);
 
         this._super(attributes);
     },
@@ -48412,18 +48628,10 @@ draw2d.VectorFigure = draw2d.shape.node.Node.extend({
                 attributes.stroke = this.color.hash();
             }
         }
-        
-        if(typeof attributes["stroke-width"]==="undefined"){
-            attributes["stroke-width"] = this.stroke;
-        }
-        
-        if(typeof attributes.fill === "undefined"){
-       	   attributes.fill = this.bgColor.hash();
-        }
 
-        if(this.dasharray!==null){
-            attributes["stroke-dasharray"]=this.dasharray;
-        }
+        draw2d.util.JSON.ensureDefault(attributes,"stroke-width" , this.stroke);
+        draw2d.util.JSON.ensureDefault(attributes,"fill" ,this.bgColor.hash());
+        draw2d.util.JSON.ensureDefault(attributes,"dasharray" , this.dasharray);
 
         this._super(attributes);
         
@@ -52294,18 +52502,14 @@ draw2d.shape.diagram.Diagram = draw2d.SetFigure.extend({
     repaint: function(attributes)
     {
         if(this.repaintBlocked===true || this.shape==null){
-            return;
+            return this;
         }
         
         attributes= attributes || {};
 
-        if(typeof attributes.fill ==="undefined"){
-            attributes.fill= "none";
-        }
-         
-        this._super(attributes);
-        
-        return this;
+        draw2d.util.JSON.ensureDefault(attributes,"fill" ,"none");
+
+        return this._super(attributes);
     },
     
     applyTransformation: function()
@@ -53970,7 +54174,7 @@ draw2d.shape.layout.TableLayout= draw2d.shape.layout.Layout.extend({
 
         this.setDimension(1,1);
 
-        return r;
+        return this;
     },
 
     /**
@@ -67416,10 +67620,10 @@ Math.sign = function()
  *  limitations under the License.
  */var HoganTemplate=function(){function a(a){this.text=a}function h(a){var h=String(a===null?"":a);return g.test(h)?h.replace(b,"&amp;").replace(c,"&lt;").replace(d,"&gt;").replace(e,"&#39;").replace(f,"&quot;"):h}a.prototype={r:function(a,b){return""},v:h,render:function(a,b){return this.r(a,b)},rp:function(a,b,c,d){var e=c[a];return e?e.render(b,c):""},rs:function(a,b,c){var d="",e=a[a.length-1];if(!i(e))return d=c(a,b),d;for(var f=0;f<e.length;f++)a.push(e[f]),d+=c(a,b),a.pop();return d},s:function(a,b,c,d,e,f){if(i(a)&&a.length===0)return!1;!d&&typeof a=="function"&&(a=this.ls(a,b,c,e,f));var g=a===""||!!a;return!d&&g&&b&&b.push(typeof a=="object"?a:b[b.length-1]),g},d:function(a,b,c,d){if(a==="."&&i(b[b.length-2]))return b[b.length-1];var e=a.split("."),f=this.f(e[0],b,c,d),g=null;for(var h=1;h<e.length;h++)f&&typeof f=="object"&&e[h]in f?(g=f,f=f[e[h]]):f="";return d&&!f?!1:(!d&&typeof f=="function"&&(b.push(g),f=this.lv(f,b,c),b.pop()),f)},f:function(a,b,c,d){var e=!1,f=null,g=!1;for(var h=b.length-1;h>=0;h--){f=b[h];if(f&&typeof f=="object"&&a in f){e=f[a],g=!0;break}}return g?(!d&&typeof e=="function"&&(e=this.lv(e,b,c)),e):d?!1:""},ho:function(a,b,c,d){var e=a.call(b,d,function(a){return Hogan.compile(a).render(b)}),f=Hogan.compile(e.toString()).render(b,c);return this.b=f,!1},b:"",ls:function(a,b,c,d,e){var f=b[b.length-1];if(a.length>0)return this.ho(a,f,c,this.text.substring(d,e));var g=a.call(f);return typeof g=="function"?this.ho(g,f,c,this.text.substring(d,e)):g},lv:function(a,b,c){var d=b[b.length-1];return Hogan.compile(a.call(d).toString()).render(d,c)}};var b=/&/g,c=/</g,d=/>/g,e=/\'/g,f=/\"/g,g=/[&<>\"\']/,i=Array.isArray||function(a){return Object.prototype.toString.call(a)==="[object Array]"};return a}(),Hogan=function(){function a(a){function s(){l.length>0&&(m.push(new String(l)),l="")}function t(){var a=!0;for(var b=p;b<m.length;b++){a=m[b].tag&&d[m[b].tag]<d._v||!m[b].tag&&m[b].match(c)==null;if(!a)return!1}return a}function u(a,b){s();if(a&&t())for(var c=p;c<m.length;c++)m[c].tag||m.splice(c,1);else b||m.push({tag:"\n"});n=!1,p=m.length}function v(a,c){var d="="+r,e=a.indexOf(d,c),f=b(a.substring(a.indexOf("=",c)+1,e)).split(" ");return q=f[0],r=f[1],e+d.length-1}var f=a.length,g=0,h=1,i=2,j=g,k=null,l="",m=[],n=!1,o=0,p=0,q="{{",r="}}";for(o=0;o<f;o++)if(j==g)e(q,a,o)?(--o,s(),j=h):a[o]=="\n"?u(n):l+=a[o];else if(j==h){o+=q.length-1;var w=d[a[o+1]];k=w?a[o+1]:"_v",n=o,k=="="?(o=v(a,o),j=g):(w&&o++,j=i)}else e(r,a,o)?(o+=r.length-1,m.push({tag:k,n:b(l),i:k=="/"?n-1:o+1}),l="",j=g,k=="{"&&o++):l+=a[o];return u(n,!0),m}function b(a){return a.trim?a.trim():a.replace(/^\s*|\s*$/g,"")}function e(a,b,c){if(b[c]!=a[0])return!1;for(var d=1,e=a.length;d<e;d++)if(b[c+d]!=a[d])return!1;return!0}function f(a,b,c,d){var e=[],i=null,j=null;while(a.length>0){j=a.shift();if(j.tag=="#"||j.tag=="^"||g(j,d))c.push(j),j.nodes=f(a,j.tag,c,d),e.push(j);else{if(j.tag=="/"){if(c.length==0)throw new Error("Closing tag without opener: /"+j.n);i=c.pop();if(j.n!=i.n&&!h(j.n,i.n,d))throw new Error("Nesting error: "+i.n+" vs. "+j.n);return i.end=j.i,e}e.push(j)}}if(c.length>0)throw new Error("missing closing tag: "+c.pop().n);return e}function g(a,b){for(var c=0,d=b.length;c<d;c++)if(b[c].o==a.n)return a.tag="#",!0}function h(a,b,c){for(var d=0,e=c.length;d<e;d++)if(c[d].c==a&&c[d].o==b)return!0}function i(a,b,c){var d='var c = [cx];var b = "";var _ = this;'+p(a)+"return b;";if(c.asString)return"function(cx,p){"+d+";};";var e=new HoganTemplate(b);return e.r=new Function("cx","p",d),e}function n(a){return a.replace(m,"\\\\").replace(j,'\\"').replace(k,"\\n").replace(l,"\\r")}function o(a){return~a.indexOf(".")?"d":"f"}function p(a){var b="";for(var c=0,d=a.length;c<d;c++){var e=a[c].tag;e=="#"?b+=q(a[c].nodes,a[c].n,o(a[c].n),a[c].i,a[c].end):e=="^"?b+=r(a[c].nodes,a[c].n,o(a[c].n)):e=="<"||e==">"?b+=s(a[c].n):e=="{"||e=="&"?b+=t(a[c].n,o(a[c].n)):e=="\n"?b+=v("\n"):e=="_v"?b+=u(a[c].n,o(a[c].n)):e===undefined&&(b+=v(a[c]))}return b}function q(a,b,c,d,e){var f="if(_.s(_."+c+'("'+n(b)+'",c,p,1),';return f+="c,p,0,"+d+","+e+")){",f+="b += _.rs(c,p,",f+='function(c,p){ var b = "";',f+=p(a),f+="return b;});c.pop();}",f+='else{b += _.b; _.b = ""};',f}function r(a,b,c){var d="if (!_.s(_."+c+'("'+n(b)+'",c,p,1),c,p,1,0,0)){';return d+=p(a),d+="};",d}function s(a){return'b += _.rp("'+n(a)+'",c[c.length - 1],p);'}function t(a,b){return"b += (_."+b+'("'+n(a)+'",c,p,0));'}function u(a,b){return"b += (_.v(_."+b+'("'+n(a)+'",c,p,0)));'}function v(a){return'b += "'+n(a)+'";'}var c=/\S/,d={"#":1,"^":2,"/":3,"!":4,">":5,"<":6,"=":7,_v:8,"{":9,"&":10},j=/\"/g,k=/\n/g,l=/\r/g,m=/\\/g;return{scan:a,parse:function(a,b){return b=b||{},f(a,"",[],b.sectionTags||[])},cache:{},compile:function(b,c){c=c||{};var d=this.cache[b];return d?d:(d=i(this.parse(a(b),c),b,c),this.cache[b]=d)}}}();typeof module!="undefined"&&module.exports?(module.exports=Hogan,module.exports.Template=HoganTemplate):typeof exports!="undefined"&&(exports.Hogan=Hogan,exports.HoganTemplate=HoganTemplate);;
 /**
-*  Ajax Autocomplete for jQuery, version 1.2.24
+*  Ajax Autocomplete for jQuery, version 1.2.25
 *  (c) 2014 Tomas Kirda
 *
 *  Ajax Autocomplete for jQuery is freely distributable under the terms of an MIT-style license.
 *  For details, see the web site: https://github.com/devbridge/jQuery-Autocomplete
 */
-!function(a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],a):a("object"==typeof exports&&"function"==typeof require?require("jquery"):jQuery)}(function(a){"use strict";function b(c,d){var e=function(){},f=this,g={ajaxSettings:{},autoSelectFirst:!1,appendTo:document.body,serviceUrl:null,lookup:null,onSelect:null,width:"auto",minChars:1,maxHeight:300,deferRequestBy:0,params:{},formatResult:b.formatResult,delimiter:null,zIndex:9999,type:"GET",noCache:!1,onSearchStart:e,onSearchComplete:e,onSearchError:e,preserveInput:!1,containerClass:"autocomplete-suggestions",tabDisabled:!1,dataType:"text",currentRequest:null,triggerSelectOnValidInput:!0,preventBadQueries:!0,lookupFilter:function(a,b,c){return-1!==a.value.toLowerCase().indexOf(c)},paramName:"query",transformResult:function(b){return"string"==typeof b?a.parseJSON(b):b},showNoSuggestionNotice:!1,noSuggestionNotice:"No results",orientation:"bottom",forceFixPosition:!1};f.element=c,f.el=a(c),f.suggestions=[],f.badQueries=[],f.selectedIndex=-1,f.currentValue=f.element.value,f.intervalId=0,f.cachedResponse={},f.onChangeInterval=null,f.onChange=null,f.isLocal=!1,f.suggestionsContainer=null,f.noSuggestionsContainer=null,f.options=a.extend({},g,d),f.classes={selected:"autocomplete-selected",suggestion:"autocomplete-suggestion"},f.hint=null,f.hintValue="",f.selection=null,f.initialize(),f.setOptions(d)}var c=function(){return{escapeRegExChars:function(a){return a.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,"\\$&")},createNode:function(a){var b=document.createElement("div");return b.className=a,b.style.position="absolute",b.style.display="none",b}}}(),d={ESC:27,TAB:9,RETURN:13,LEFT:37,UP:38,RIGHT:39,DOWN:40};b.utils=c,a.Autocomplete=b,b.formatResult=function(a,b){var d="("+c.escapeRegExChars(b)+")";return a.value.replace(new RegExp(d,"gi"),"<strong>$1</strong>").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/&lt;(\/?strong)&gt;/g,"<$1>")},b.prototype={killerFn:null,initialize:function(){var c,d=this,e="."+d.classes.suggestion,f=d.classes.selected,g=d.options;d.element.setAttribute("autocomplete","off"),d.killerFn=function(b){0===a(b.target).closest("."+d.options.containerClass).length&&(d.killSuggestions(),d.disableKillerFn())},d.noSuggestionsContainer=a('<div class="autocomplete-no-suggestion"></div>').html(this.options.noSuggestionNotice).get(0),d.suggestionsContainer=b.utils.createNode(g.containerClass),c=a(d.suggestionsContainer),c.appendTo(g.appendTo),"auto"!==g.width&&c.width(g.width),c.on("mouseover.autocomplete",e,function(){d.activate(a(this).data("index"))}),c.on("mouseout.autocomplete",function(){d.selectedIndex=-1,c.children("."+f).removeClass(f)}),c.on("click.autocomplete",e,function(){d.select(a(this).data("index"))}),d.fixPositionCapture=function(){d.visible&&d.fixPosition()},a(window).on("resize.autocomplete",d.fixPositionCapture),d.el.on("keydown.autocomplete",function(a){d.onKeyPress(a)}),d.el.on("keyup.autocomplete",function(a){d.onKeyUp(a)}),d.el.on("blur.autocomplete",function(){d.onBlur()}),d.el.on("focus.autocomplete",function(){d.onFocus()}),d.el.on("change.autocomplete",function(a){d.onKeyUp(a)}),d.el.on("input.autocomplete",function(a){d.onKeyUp(a)})},onFocus:function(){var a=this;a.fixPosition(),0===a.options.minChars&&0===a.el.val().length&&a.onValueChange()},onBlur:function(){this.enableKillerFn()},abortAjax:function(){var a=this;a.currentRequest&&(a.currentRequest.abort(),a.currentRequest=null)},setOptions:function(b){var c=this,d=c.options;a.extend(d,b),c.isLocal=a.isArray(d.lookup),c.isLocal&&(d.lookup=c.verifySuggestionsFormat(d.lookup)),d.orientation=c.validateOrientation(d.orientation,"bottom"),a(c.suggestionsContainer).css({"max-height":d.maxHeight+"px",width:d.width+"px","z-index":d.zIndex})},clearCache:function(){this.cachedResponse={},this.badQueries=[]},clear:function(){this.clearCache(),this.currentValue="",this.suggestions=[]},disable:function(){var a=this;a.disabled=!0,clearInterval(a.onChangeInterval),a.abortAjax()},enable:function(){this.disabled=!1},fixPosition:function(){var b=this,c=a(b.suggestionsContainer),d=c.parent().get(0);if(d===document.body||b.options.forceFixPosition){var e=b.options.orientation,f=c.outerHeight(),g=b.el.outerHeight(),h=b.el.offset(),i={top:h.top,left:h.left};if("auto"===e){var j=a(window).height(),k=a(window).scrollTop(),l=-k+h.top-f,m=k+j-(h.top+g+f);e=Math.max(l,m)===l?"top":"bottom"}if("top"===e?i.top+=-f:i.top+=g,d!==document.body){var n,o=c.css("opacity");b.visible||c.css("opacity",0).show(),n=c.offsetParent().offset(),i.top-=n.top,i.left-=n.left,b.visible||c.css("opacity",o).hide()}"auto"===b.options.width&&(i.width=b.el.outerWidth()-2+"px"),c.css(i)}},enableKillerFn:function(){var b=this;a(document).on("click.autocomplete",b.killerFn)},disableKillerFn:function(){var b=this;a(document).off("click.autocomplete",b.killerFn)},killSuggestions:function(){var a=this;a.stopKillSuggestions(),a.intervalId=window.setInterval(function(){a.visible&&(a.el.val(a.currentValue),a.hide()),a.stopKillSuggestions()},50)},stopKillSuggestions:function(){window.clearInterval(this.intervalId)},isCursorAtEnd:function(){var a,b=this,c=b.el.val().length,d=b.element.selectionStart;return"number"==typeof d?d===c:document.selection?(a=document.selection.createRange(),a.moveStart("character",-c),c===a.text.length):!0},onKeyPress:function(a){var b=this;if(!b.disabled&&!b.visible&&a.which===d.DOWN&&b.currentValue)return void b.suggest();if(!b.disabled&&b.visible){switch(a.which){case d.ESC:b.el.val(b.currentValue),b.hide();break;case d.RIGHT:if(b.hint&&b.options.onHint&&b.isCursorAtEnd()){b.selectHint();break}return;case d.TAB:if(b.hint&&b.options.onHint)return void b.selectHint();if(-1===b.selectedIndex)return void b.hide();if(b.select(b.selectedIndex),b.options.tabDisabled===!1)return;break;case d.RETURN:if(-1===b.selectedIndex)return void b.hide();b.select(b.selectedIndex);break;case d.UP:b.moveUp();break;case d.DOWN:b.moveDown();break;default:return}a.stopImmediatePropagation(),a.preventDefault()}},onKeyUp:function(a){var b=this;if(!b.disabled){switch(a.which){case d.UP:case d.DOWN:return}clearInterval(b.onChangeInterval),b.currentValue!==b.el.val()&&(b.findBestHint(),b.options.deferRequestBy>0?b.onChangeInterval=setInterval(function(){b.onValueChange()},b.options.deferRequestBy):b.onValueChange())}},onValueChange:function(){var b=this,c=b.options,d=b.el.val(),e=b.getQuery(d);return b.selection&&b.currentValue!==e&&(b.selection=null,(c.onInvalidateSelection||a.noop).call(b.element)),clearInterval(b.onChangeInterval),b.currentValue=d,b.selectedIndex=-1,c.triggerSelectOnValidInput&&b.isExactMatch(e)?void b.select(0):void(e.length<c.minChars?b.hide():b.getSuggestions(e))},isExactMatch:function(a){var b=this.suggestions;return 1===b.length&&b[0].value.toLowerCase()===a.toLowerCase()},getQuery:function(b){var c,d=this.options.delimiter;return d?(c=b.split(d),a.trim(c[c.length-1])):b},getSuggestionsLocal:function(b){var c,d=this,e=d.options,f=b.toLowerCase(),g=e.lookupFilter,h=parseInt(e.lookupLimit,10);return c={suggestions:a.grep(e.lookup,function(a){return g(a,b,f)})},h&&c.suggestions.length>h&&(c.suggestions=c.suggestions.slice(0,h)),c},getSuggestions:function(b){var c,d,e,f,g=this,h=g.options,i=h.serviceUrl;if(h.params[h.paramName]=b,d=h.ignoreParams?null:h.params,h.onSearchStart.call(g.element,h.params)!==!1){if(a.isFunction(h.lookup))return void h.lookup(b,function(a){g.suggestions=a.suggestions,g.suggest(),h.onSearchComplete.call(g.element,b,a.suggestions)});g.isLocal?c=g.getSuggestionsLocal(b):(a.isFunction(i)&&(i=i.call(g.element,b)),e=i+"?"+a.param(d||{}),c=g.cachedResponse[e]),c&&a.isArray(c.suggestions)?(g.suggestions=c.suggestions,g.suggest(),h.onSearchComplete.call(g.element,b,c.suggestions)):g.isBadQuery(b)?h.onSearchComplete.call(g.element,b,[]):(g.abortAjax(),f={url:i,data:d,type:h.type,dataType:h.dataType},a.extend(f,h.ajaxSettings),g.currentRequest=a.ajax(f).done(function(a){var c;g.currentRequest=null,c=h.transformResult(a,b),g.processResponse(c,b,e),h.onSearchComplete.call(g.element,b,c.suggestions)}).fail(function(a,c,d){h.onSearchError.call(g.element,b,a,c,d)}))}},isBadQuery:function(a){if(!this.options.preventBadQueries)return!1;for(var b=this.badQueries,c=b.length;c--;)if(0===a.indexOf(b[c]))return!0;return!1},hide:function(){var b=this,c=a(b.suggestionsContainer);a.isFunction(b.options.onHide)&&b.visible&&b.options.onHide.call(b.element,c),b.visible=!1,b.selectedIndex=-1,clearInterval(b.onChangeInterval),a(b.suggestionsContainer).hide(),b.signalHint(null)},suggest:function(){if(0===this.suggestions.length)return void(this.options.showNoSuggestionNotice?this.noSuggestions():this.hide());var b,c=this,d=c.options,e=d.groupBy,f=d.formatResult,g=c.getQuery(c.currentValue),h=c.classes.suggestion,i=c.classes.selected,j=a(c.suggestionsContainer),k=a(c.noSuggestionsContainer),l=d.beforeRender,m="",n=function(a,c){var d=a.data[e];return b===d?"":(b=d,'<div class="autocomplete-group"><strong>'+b+"</strong></div>")};return d.triggerSelectOnValidInput&&c.isExactMatch(g)?void c.select(0):(a.each(c.suggestions,function(a,b){e&&(m+=n(b,g,a)),m+='<div class="'+h+'" data-index="'+a+'">'+f(b,g)+"</div>"}),this.adjustContainerWidth(),k.detach(),j.html(m),a.isFunction(l)&&l.call(c.element,j),c.fixPosition(),j.show(),d.autoSelectFirst&&(c.selectedIndex=0,j.scrollTop(0),j.children("."+h).first().addClass(i)),c.visible=!0,void c.findBestHint())},noSuggestions:function(){var b=this,c=a(b.suggestionsContainer),d=a(b.noSuggestionsContainer);this.adjustContainerWidth(),d.detach(),c.empty(),c.append(d),b.fixPosition(),c.show(),b.visible=!0},adjustContainerWidth:function(){var b,c=this,d=c.options,e=a(c.suggestionsContainer);"auto"===d.width&&(b=c.el.outerWidth()-2,e.width(b>0?b:300))},findBestHint:function(){var b=this,c=b.el.val().toLowerCase(),d=null;c&&(a.each(b.suggestions,function(a,b){var e=0===b.value.toLowerCase().indexOf(c);return e&&(d=b),!e}),b.signalHint(d))},signalHint:function(b){var c="",d=this;b&&(c=d.currentValue+b.value.substr(d.currentValue.length)),d.hintValue!==c&&(d.hintValue=c,d.hint=b,(this.options.onHint||a.noop)(c))},verifySuggestionsFormat:function(b){return b.length&&"string"==typeof b[0]?a.map(b,function(a){return{value:a,data:null}}):b},validateOrientation:function(b,c){return b=a.trim(b||"").toLowerCase(),-1===a.inArray(b,["auto","bottom","top"])&&(b=c),b},processResponse:function(a,b,c){var d=this,e=d.options;a.suggestions=d.verifySuggestionsFormat(a.suggestions),e.noCache||(d.cachedResponse[c]=a,e.preventBadQueries&&0===a.suggestions.length&&d.badQueries.push(b)),b===d.getQuery(d.currentValue)&&(d.suggestions=a.suggestions,d.suggest())},activate:function(b){var c,d=this,e=d.classes.selected,f=a(d.suggestionsContainer),g=f.find("."+d.classes.suggestion);return f.find("."+e).removeClass(e),d.selectedIndex=b,-1!==d.selectedIndex&&g.length>d.selectedIndex?(c=g.get(d.selectedIndex),a(c).addClass(e),c):null},selectHint:function(){var b=this,c=a.inArray(b.hint,b.suggestions);b.select(c)},select:function(a){var b=this;b.hide(),b.onSelect(a)},moveUp:function(){var b=this;if(-1!==b.selectedIndex)return 0===b.selectedIndex?(a(b.suggestionsContainer).children().first().removeClass(b.classes.selected),b.selectedIndex=-1,b.el.val(b.currentValue),void b.findBestHint()):void b.adjustScroll(b.selectedIndex-1)},moveDown:function(){var a=this;a.selectedIndex!==a.suggestions.length-1&&a.adjustScroll(a.selectedIndex+1)},adjustScroll:function(b){var c=this,d=c.activate(b);if(d){var e,f,g,h=a(d).outerHeight();e=d.offsetTop,f=a(c.suggestionsContainer).scrollTop(),g=f+c.options.maxHeight-h,f>e?a(c.suggestionsContainer).scrollTop(e):e>g&&a(c.suggestionsContainer).scrollTop(e-c.options.maxHeight+h),c.options.preserveInput||c.el.val(c.getValue(c.suggestions[b].value)),c.signalHint(null)}},onSelect:function(b){var c=this,d=c.options.onSelect,e=c.suggestions[b];c.currentValue=c.getValue(e.value),c.currentValue===c.el.val()||c.options.preserveInput||c.el.val(c.currentValue),c.signalHint(null),c.suggestions=[],c.selection=e,a.isFunction(d)&&d.call(c.element,e)},getValue:function(a){var b,c,d=this,e=d.options.delimiter;return e?(b=d.currentValue,c=b.split(e),1===c.length?a:b.substr(0,b.length-c[c.length-1].length)+a):a},dispose:function(){var b=this;b.el.off(".autocomplete").removeData("autocomplete"),b.disableKillerFn(),a(window).off("resize.autocomplete",b.fixPositionCapture),a(b.suggestionsContainer).remove()}},a.fn.autocomplete=a.fn.devbridgeAutocomplete=function(c,d){var e="autocomplete";return 0===arguments.length?this.first().data(e):this.each(function(){var f=a(this),g=f.data(e);"string"==typeof c?g&&"function"==typeof g[c]&&g[c](d):(g&&g.dispose&&g.dispose(),g=new b(this,c),f.data(e,g))})}});
+!function(a){"use strict";"function"==typeof define&&define.amd?define(["jquery"],a):a("object"==typeof exports&&"function"==typeof require?require("jquery"):jQuery)}(function(a){"use strict";function b(c,d){var e=function(){},f=this,g={ajaxSettings:{},autoSelectFirst:!1,appendTo:document.body,serviceUrl:null,lookup:null,onSelect:null,width:"auto",minChars:1,maxHeight:300,deferRequestBy:0,params:{},formatResult:b.formatResult,delimiter:null,zIndex:9999,type:"GET",noCache:!1,onSearchStart:e,onSearchComplete:e,onSearchError:e,preserveInput:!1,containerClass:"autocomplete-suggestions",tabDisabled:!1,dataType:"text",currentRequest:null,triggerSelectOnValidInput:!0,preventBadQueries:!0,lookupFilter:function(a,b,c){return-1!==a.value.toLowerCase().indexOf(c)},paramName:"query",transformResult:function(b){return"string"==typeof b?a.parseJSON(b):b},showNoSuggestionNotice:!1,noSuggestionNotice:"No results",orientation:"bottom",forceFixPosition:!1};f.element=c,f.el=a(c),f.suggestions=[],f.badQueries=[],f.selectedIndex=-1,f.currentValue=f.element.value,f.intervalId=0,f.cachedResponse={},f.onChangeInterval=null,f.onChange=null,f.isLocal=!1,f.suggestionsContainer=null,f.noSuggestionsContainer=null,f.options=a.extend({},g,d),f.classes={selected:"autocomplete-selected",suggestion:"autocomplete-suggestion"},f.hint=null,f.hintValue="",f.selection=null,f.initialize(),f.setOptions(d)}var c=function(){return{escapeRegExChars:function(a){return a.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,"\\$&")},createNode:function(a){var b=document.createElement("div");return b.className=a,b.style.position="absolute",b.style.display="none",b}}}(),d={ESC:27,TAB:9,RETURN:13,LEFT:37,UP:38,RIGHT:39,DOWN:40};b.utils=c,a.Autocomplete=b,b.formatResult=function(a,b){if(!b)return a.value;var d="("+c.escapeRegExChars(b)+")";return a.value.replace(new RegExp(d,"gi"),"<strong>$1</strong>").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/&lt;(\/?strong)&gt;/g,"<$1>")},b.prototype={killerFn:null,initialize:function(){var c,d=this,e="."+d.classes.suggestion,f=d.classes.selected,g=d.options;d.element.setAttribute("autocomplete","off"),d.killerFn=function(b){0===a(b.target).closest("."+d.options.containerClass).length&&(d.killSuggestions(),d.disableKillerFn())},d.noSuggestionsContainer=a('<div class="autocomplete-no-suggestion"></div>').html(this.options.noSuggestionNotice).get(0),d.suggestionsContainer=b.utils.createNode(g.containerClass),c=a(d.suggestionsContainer),c.appendTo(g.appendTo),"auto"!==g.width&&c.width(g.width),c.on("mouseover.autocomplete",e,function(){d.activate(a(this).data("index"))}),c.on("mouseout.autocomplete",function(){d.selectedIndex=-1,c.children("."+f).removeClass(f)}),c.on("click.autocomplete",e,function(){return d.select(a(this).data("index")),!1}),d.fixPositionCapture=function(){d.visible&&d.fixPosition()},a(window).on("resize.autocomplete",d.fixPositionCapture),d.el.on("keydown.autocomplete",function(a){d.onKeyPress(a)}),d.el.on("keyup.autocomplete",function(a){d.onKeyUp(a)}),d.el.on("blur.autocomplete",function(){d.onBlur()}),d.el.on("focus.autocomplete",function(){d.onFocus()}),d.el.on("change.autocomplete",function(a){d.onKeyUp(a)}),d.el.on("input.autocomplete",function(a){d.onKeyUp(a)})},onFocus:function(){var a=this;a.fixPosition(),a.el.val().length>=a.options.minChars&&a.onValueChange()},onBlur:function(){this.enableKillerFn()},abortAjax:function(){var a=this;a.currentRequest&&(a.currentRequest.abort(),a.currentRequest=null)},setOptions:function(b){var c=this,d=c.options;a.extend(d,b),c.isLocal=a.isArray(d.lookup),c.isLocal&&(d.lookup=c.verifySuggestionsFormat(d.lookup)),d.orientation=c.validateOrientation(d.orientation,"bottom"),a(c.suggestionsContainer).css({"max-height":d.maxHeight+"px",width:d.width+"px","z-index":d.zIndex})},clearCache:function(){this.cachedResponse={},this.badQueries=[]},clear:function(){this.clearCache(),this.currentValue="",this.suggestions=[]},disable:function(){var a=this;a.disabled=!0,clearInterval(a.onChangeInterval),a.abortAjax()},enable:function(){this.disabled=!1},fixPosition:function(){var b=this,c=a(b.suggestionsContainer),d=c.parent().get(0);if(d===document.body||b.options.forceFixPosition){var e=b.options.orientation,f=c.outerHeight(),g=b.el.outerHeight(),h=b.el.offset(),i={top:h.top,left:h.left};if("auto"===e){var j=a(window).height(),k=a(window).scrollTop(),l=-k+h.top-f,m=k+j-(h.top+g+f);e=Math.max(l,m)===l?"top":"bottom"}if("top"===e?i.top+=-f:i.top+=g,d!==document.body){var n,o=c.css("opacity");b.visible||c.css("opacity",0).show(),n=c.offsetParent().offset(),i.top-=n.top,i.left-=n.left,b.visible||c.css("opacity",o).hide()}"auto"===b.options.width&&(i.width=b.el.outerWidth()-2+"px"),c.css(i)}},enableKillerFn:function(){var b=this;a(document).on("click.autocomplete",b.killerFn)},disableKillerFn:function(){var b=this;a(document).off("click.autocomplete",b.killerFn)},killSuggestions:function(){var a=this;a.stopKillSuggestions(),a.intervalId=window.setInterval(function(){a.visible&&(a.el.val(a.currentValue),a.hide()),a.stopKillSuggestions()},50)},stopKillSuggestions:function(){window.clearInterval(this.intervalId)},isCursorAtEnd:function(){var a,b=this,c=b.el.val().length,d=b.element.selectionStart;return"number"==typeof d?d===c:document.selection?(a=document.selection.createRange(),a.moveStart("character",-c),c===a.text.length):!0},onKeyPress:function(a){var b=this;if(!b.disabled&&!b.visible&&a.which===d.DOWN&&b.currentValue)return void b.suggest();if(!b.disabled&&b.visible){switch(a.which){case d.ESC:b.el.val(b.currentValue),b.hide();break;case d.RIGHT:if(b.hint&&b.options.onHint&&b.isCursorAtEnd()){b.selectHint();break}return;case d.TAB:if(b.hint&&b.options.onHint)return void b.selectHint();if(-1===b.selectedIndex)return void b.hide();if(b.select(b.selectedIndex),b.options.tabDisabled===!1)return;break;case d.RETURN:if(-1===b.selectedIndex)return void b.hide();b.select(b.selectedIndex);break;case d.UP:b.moveUp();break;case d.DOWN:b.moveDown();break;default:return}a.stopImmediatePropagation(),a.preventDefault()}},onKeyUp:function(a){var b=this;if(!b.disabled){switch(a.which){case d.UP:case d.DOWN:return}clearInterval(b.onChangeInterval),b.currentValue!==b.el.val()&&(b.findBestHint(),b.options.deferRequestBy>0?b.onChangeInterval=setInterval(function(){b.onValueChange()},b.options.deferRequestBy):b.onValueChange())}},onValueChange:function(){var b=this,c=b.options,d=b.el.val(),e=b.getQuery(d);return b.selection&&b.currentValue!==e&&(b.selection=null,(c.onInvalidateSelection||a.noop).call(b.element)),clearInterval(b.onChangeInterval),b.currentValue=d,b.selectedIndex=-1,c.triggerSelectOnValidInput&&b.isExactMatch(e)?void b.select(0):void(e.length<c.minChars?b.hide():b.getSuggestions(e))},isExactMatch:function(a){var b=this.suggestions;return 1===b.length&&b[0].value.toLowerCase()===a.toLowerCase()},getQuery:function(b){var c,d=this.options.delimiter;return d?(c=b.split(d),a.trim(c[c.length-1])):b},getSuggestionsLocal:function(b){var c,d=this,e=d.options,f=b.toLowerCase(),g=e.lookupFilter,h=parseInt(e.lookupLimit,10);return c={suggestions:a.grep(e.lookup,function(a){return g(a,b,f)})},h&&c.suggestions.length>h&&(c.suggestions=c.suggestions.slice(0,h)),c},getSuggestions:function(b){var c,d,e,f,g=this,h=g.options,i=h.serviceUrl;if(h.params[h.paramName]=b,d=h.ignoreParams?null:h.params,h.onSearchStart.call(g.element,h.params)!==!1){if(a.isFunction(h.lookup))return void h.lookup(b,function(a){g.suggestions=a.suggestions,g.suggest(),h.onSearchComplete.call(g.element,b,a.suggestions)});g.isLocal?c=g.getSuggestionsLocal(b):(a.isFunction(i)&&(i=i.call(g.element,b)),e=i+"?"+a.param(d||{}),c=g.cachedResponse[e]),c&&a.isArray(c.suggestions)?(g.suggestions=c.suggestions,g.suggest(),h.onSearchComplete.call(g.element,b,c.suggestions)):g.isBadQuery(b)?h.onSearchComplete.call(g.element,b,[]):(g.abortAjax(),f={url:i,data:d,type:h.type,dataType:h.dataType},a.extend(f,h.ajaxSettings),g.currentRequest=a.ajax(f).done(function(a){var c;g.currentRequest=null,c=h.transformResult(a,b),g.processResponse(c,b,e),h.onSearchComplete.call(g.element,b,c.suggestions)}).fail(function(a,c,d){h.onSearchError.call(g.element,b,a,c,d)}))}},isBadQuery:function(a){if(!this.options.preventBadQueries)return!1;for(var b=this.badQueries,c=b.length;c--;)if(0===a.indexOf(b[c]))return!0;return!1},hide:function(){var b=this,c=a(b.suggestionsContainer);a.isFunction(b.options.onHide)&&b.visible&&b.options.onHide.call(b.element,c),b.visible=!1,b.selectedIndex=-1,clearInterval(b.onChangeInterval),a(b.suggestionsContainer).hide(),b.signalHint(null)},suggest:function(){if(0===this.suggestions.length)return void(this.options.showNoSuggestionNotice?this.noSuggestions():this.hide());var b,c=this,d=c.options,e=d.groupBy,f=d.formatResult,g=c.getQuery(c.currentValue),h=c.classes.suggestion,i=c.classes.selected,j=a(c.suggestionsContainer),k=a(c.noSuggestionsContainer),l=d.beforeRender,m="",n=function(a,c){var d=a.data[e];return b===d?"":(b=d,'<div class="autocomplete-group"><strong>'+b+"</strong></div>")};return d.triggerSelectOnValidInput&&c.isExactMatch(g)?void c.select(0):(a.each(c.suggestions,function(a,b){e&&(m+=n(b,g,a)),m+='<div class="'+h+'" data-index="'+a+'">'+f(b,g,a)+"</div>"}),this.adjustContainerWidth(),k.detach(),j.html(m),a.isFunction(l)&&l.call(c.element,j,c.suggestions),c.fixPosition(),j.show(),d.autoSelectFirst&&(c.selectedIndex=0,j.scrollTop(0),j.children("."+h).first().addClass(i)),c.visible=!0,void c.findBestHint())},noSuggestions:function(){var b=this,c=a(b.suggestionsContainer),d=a(b.noSuggestionsContainer);this.adjustContainerWidth(),d.detach(),c.empty(),c.append(d),b.fixPosition(),c.show(),b.visible=!0},adjustContainerWidth:function(){var b,c=this,d=c.options,e=a(c.suggestionsContainer);"auto"===d.width&&(b=c.el.outerWidth()-2,e.width(b>0?b:300))},findBestHint:function(){var b=this,c=b.el.val().toLowerCase(),d=null;c&&(a.each(b.suggestions,function(a,b){var e=0===b.value.toLowerCase().indexOf(c);return e&&(d=b),!e}),b.signalHint(d))},signalHint:function(b){var c="",d=this;b&&(c=d.currentValue+b.value.substr(d.currentValue.length)),d.hintValue!==c&&(d.hintValue=c,d.hint=b,(this.options.onHint||a.noop)(c))},verifySuggestionsFormat:function(b){return b.length&&"string"==typeof b[0]?a.map(b,function(a){return{value:a,data:null}}):b},validateOrientation:function(b,c){return b=a.trim(b||"").toLowerCase(),-1===a.inArray(b,["auto","bottom","top"])&&(b=c),b},processResponse:function(a,b,c){var d=this,e=d.options;a.suggestions=d.verifySuggestionsFormat(a.suggestions),e.noCache||(d.cachedResponse[c]=a,e.preventBadQueries&&0===a.suggestions.length&&d.badQueries.push(b)),b===d.getQuery(d.currentValue)&&(d.suggestions=a.suggestions,d.suggest())},activate:function(b){var c,d=this,e=d.classes.selected,f=a(d.suggestionsContainer),g=f.find("."+d.classes.suggestion);return f.find("."+e).removeClass(e),d.selectedIndex=b,-1!==d.selectedIndex&&g.length>d.selectedIndex?(c=g.get(d.selectedIndex),a(c).addClass(e),c):null},selectHint:function(){var b=this,c=a.inArray(b.hint,b.suggestions);b.select(c)},select:function(a){var b=this;b.hide(),b.onSelect(a)},moveUp:function(){var b=this;if(-1!==b.selectedIndex)return 0===b.selectedIndex?(a(b.suggestionsContainer).children().first().removeClass(b.classes.selected),b.selectedIndex=-1,b.el.val(b.currentValue),void b.findBestHint()):void b.adjustScroll(b.selectedIndex-1)},moveDown:function(){var a=this;a.selectedIndex!==a.suggestions.length-1&&a.adjustScroll(a.selectedIndex+1)},adjustScroll:function(b){var c=this,d=c.activate(b);if(d){var e,f,g,h=a(d).outerHeight();e=d.offsetTop,f=a(c.suggestionsContainer).scrollTop(),g=f+c.options.maxHeight-h,f>e?a(c.suggestionsContainer).scrollTop(e):e>g&&a(c.suggestionsContainer).scrollTop(e-c.options.maxHeight+h),c.options.preserveInput||c.el.val(c.getValue(c.suggestions[b].value)),c.signalHint(null)}},onSelect:function(b){var c=this,d=c.options.onSelect,e=c.suggestions[b];c.currentValue=c.getValue(e.value),c.currentValue===c.el.val()||c.options.preserveInput||c.el.val(c.currentValue),c.signalHint(null),c.suggestions=[],c.selection=e,a.isFunction(d)&&d.call(c.element,e)},getValue:function(a){var b,c,d=this,e=d.options.delimiter;return e?(b=d.currentValue,c=b.split(e),1===c.length?a:b.substr(0,b.length-c[c.length-1].length)+a):a},dispose:function(){var b=this;b.el.off(".autocomplete").removeData("autocomplete"),b.disableKillerFn(),a(window).off("resize.autocomplete",b.fixPositionCapture),a(b.suggestionsContainer).remove()}},a.fn.autocomplete=a.fn.devbridgeAutocomplete=function(c,d){var e="autocomplete";return 0===arguments.length?this.first().data(e):this.each(function(){var f=a(this),g=f.data(e);"string"==typeof c?g&&"function"==typeof g[c]&&g[c](d):(g&&g.dispose&&g.dispose(),g=new b(this,c),f.data(e,g))})}});
