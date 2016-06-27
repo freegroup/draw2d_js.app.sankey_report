@@ -51,14 +51,16 @@ sankey.View = draw2d.Canvas.extend({
             max=0;
         this.getLines().each(function(index, conn){
             min = Math.min(min,conn.getWeight());
-            max = Math.max(max,conn.getWeight());
+            max = Math.max(2,Math.max(max,conn.getWeight()));
         });
 
         var minStroke = 2;
         var maxStroke = 20;
         this.getLines().each(function(index, conn){
             // [A, B] --> [a, b]
+
             conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/(max-min) + minStroke);
+            console.log(conn.getStroke());
         });
 
     },

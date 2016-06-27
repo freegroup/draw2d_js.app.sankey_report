@@ -3,8 +3,8 @@
 
 //var DEFAULT_ROUTER= new draw2d.layout.connection.DirectRouter();
 //var DEFAULT_ROUTER= new draw2d.layout.connection.FanConnectionRouter();
-//var DEFAULT_ROUTER= new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
-var DEFAULT_ROUTER= new draw2d.layout.connection.SplineConnectionRouter();
+var DEFAULT_ROUTER= new draw2d.layout.connection.InteractiveManhattanConnectionRouter();
+//var DEFAULT_ROUTER= new draw2d.layout.connection.SplineConnectionRouter();
 
 sankey.shape.Connection = draw2d.Connection.extend({
     NAME : "sankey.shape.Connection",
@@ -104,8 +104,6 @@ sankey.shape.Connection = draw2d.Connection.extend({
             // add the new figure as child to this figure
             this.add(figure, locator);
 
-            console.log(json.boundedCorners);
-            console.log(locator);
             if( locator.boundedCorners){
                 $.extend(locator.boundedCorners, json.boundedCorners);
             }

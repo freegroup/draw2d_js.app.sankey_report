@@ -18,9 +18,7 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
 
         // description see "bind" method
         this.boundedCorners={
-            parent:0,
-            child:0,
-            dist: Number.MAX_SAFE_INTEGER,
+            percentage: 0,
             xOffset: 0,
             yOffset: 0
         };
@@ -47,34 +45,27 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
         var calcBoundingCorner=function() {
 
             _this.boundedCorners={
-                parent:0,
-                child:0,
-                dist: Number.MAX_SAFE_INTEGER,
+                percentage: 0,
                 xOffset: 0,
                 yOffset: 0
             };
-            var parentVertices = child.getParent().getVertices();
-            parentVertices = new draw2d.util.ArrayList([parentVertices.first(),parentVertices.last()]);
 
-            var childVertices  = child.getBoundingBox().getVertices();
-            var i_parent, i_child;
-            var p1, p2, distance;
-            for (i_parent = 0; i_parent < parentVertices.getSize(); i_parent++) {
-                for (i_child = 0; i_child < childVertices.getSize(); i_child++) {
-                    p1 = parentVertices.get(i_parent);
-                    p2 = childVertices.get(i_child);
-                    distance = Math.abs(p1.distance(p2));
-                    if (distance < _this.boundedCorners.dist) {
-                        _this.boundedCorners = {
-                            parent: i_parent,
-                            child: i_child,
-                            dist: distance,
-                            xOffset:p1.x-p2.x,
-                            yOffset:p1.y-p2.y
-                        };
-                    }
-                }
+            var line = child.getParent();
+            var center  = child.getBoundingBox().getCenter();
+            var pos= child.getPosition();
+            var projection = line.pointProjection(center);
+            if(projection===null){
+                var p1= line.getStartPosition();
+                var p2= line.getEndPosition();
+                var d1= center.distance(p1);
+                var d2= center.distance(p1);
+                projection=d1<d2?p1:p2;
             }
+            else{
+                _this.boundedCorners.percentage = projection.percentage;
+            }
+            _this.boundedCorners.xOffset = projection.x - pos.x;
+            _this.boundedCorners.yOffset = projection.y - pos.y;
         };
 
         // override the parent implementation to avoid
@@ -111,17 +102,18 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
     {
         this._super(index, figure);
 
-        var parentVertices = figure.getParent().getVertices();
-        parentVertices = new draw2d.util.ArrayList([parentVertices.first(),parentVertices.last()]);
-        var childVertices = figure.getBoundingBox().getVertices();
-        var p1 = parentVertices.get(this.boundedCorners.parent);
-        var p2 = childVertices.get(this.boundedCorners.child);
+        var line = figure.getParent();
 
-        var xOffset = p1.x - p2.x;
-        var yOffset = p1.y - p2.y;
+        if(line===null){
+            return;
+        }
+        if (figure.canvas === null) {
+            return;
+        }
+        var point = line.lerp(this.boundedCorners.percentage);
         // restore the initial distance from the corner by adding the new offset
         // to the position of the child
-        figure.translate(xOffset - this.boundedCorners.xOffset, yOffset - this.boundedCorners.yOffset);
+        figure.setPosition(point.x - this.boundedCorners.xOffset, point.y - this.boundedCorners.yOffset);
 
     }
 });
