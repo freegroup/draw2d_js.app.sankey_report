@@ -78,5 +78,6 @@ app.post('/backend/hook', function(req, res){
 });
 
 http.listen(port, function(){
+    console.log('serve directory "'+__dirname+'"');
     console.log('listening on http://'+address+':'+port+'/');
 });
