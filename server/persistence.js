@@ -1,35 +1,24 @@
-var sqlite3 = require('sqlite3').verbose();
-var fs   = require('fs');
-var storageDir =process.env.HOME+ "/.sankey";
+var db = require('pg');
+db.defaults.ssl = true;
+var conString = process.env.DATABASE_URL;
+var client = new db.Client(conString);
+client.connect();
 
-// get the local storage for files in the home directory of the
-// current user
-//
-try {fs.mkdirSync(storageDir);} catch(e) {}
 
-var db = new sqlite3.Database(storageDir+'/json.db');
-
-db.serialize(function() {
-    db.run("CREATE TABLE IF NOT EXISTS json   (id STRING PRIMARY KEY,  doc TEXT)");
-    db.run("CREATE TABLE IF NOT EXISTS status (id STRING,  file STRING, node STRING,  UNIQUE(id, file))");
-    db.run("CREATE TABLE IF NOT EXISTS weight (conn STRING PRIMARY KEY, file STRING, value LONG)");
-});
+client.query("CREATE TABLE IF NOT EXISTS json   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
+client.query("CREATE TABLE IF NOT EXISTS status (id VARCHAR(500),  file VARCHAR(500), node VARCHAR(500),  UNIQUE(id, file))");
+client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500) PRIMARY KEY, file VARCHAR(500), value bigint)");
+client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
 
 
 module.exports = {
 
-    dir : storageDir,
-
-    open: function(){
-        return db;
-    },
+    client:client,
 
     cleanupForFile:function(file)
     {
-        file = storageDir+"/"+file;
-        db.serialize(function() {
-            db.run("DELETE from weight where file=?",file);
-            db.run("DELETE from status where file=?",file);
-        });
+        client.query("DELETE from weight where file=$1",file);
+        client.query("DELETE from status where file=$1",file);
+        client.query("DELETE from file where id=$1",file);
     }
 };

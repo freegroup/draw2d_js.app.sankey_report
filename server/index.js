@@ -42,28 +42,40 @@ app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
 app.get('/backend/file/list', function (req, res) {
-    glob(persistence.dir+"/*.sankey", {}, function (er, files) {
+    var query = persistence.client.query("SELECT * from file");
+    query.on("row", function (row, result) {
+        result.addRow(row);
+    });
+    query.on("end", function (result) {
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify( {files:files.map(function(f){return {id:path.basename(f)};})}));
+        res.send(JSON.stringify( {files:result.rows.map(function(f){return {id: f.id};})}));
     });
 });
 
 app.post('/backend/file/get', function (req, res) {
     res.setHeader('Content-Type', 'application/json');
-    fs.createReadStream(persistence.dir+"/"+req.body.id).pipe(res);
+    var query = persistence.client.query("SELECT * from file where id=$1",[req.body.id]);
+    query.on("row", function (row, result) {
+        result.addRow(row);
+    });
+    query.on("end", function (result) {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result.rows[0].doc);
+    });
 });
 
 app.post('/backend/file/save', function (req, res) {
-    fs.writeFile(persistence.dir + "/" + req.body.id, req.body.content, function (err) {
-        persistence.cleanupForFile(req.body.id);
+    persistence.client.query('INSERT into file (id, doc) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET doc = $3',  [req.body.id, req.body.content,req.body.content],function(){
         res.send('true');
     });
 });
 
 app.post('/backend/sankey/weights', function (req, res) {
+
     sankey.weights(req.body.id , function(records){
         res.send(records);
     });
+
 });
 
 app.post('/backend/hook', function(req, res){

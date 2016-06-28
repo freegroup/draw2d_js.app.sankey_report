@@ -2,11 +2,10 @@
   "name": "draw2d_js.app.sankey_report",
   "version": "0.0.1",
   "description": "Draw2D Sankey flow report",
-  "main": "index.html",
+  "main": "./server/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "main": "./server/index.js",
   "bin": {
     "sankey": "./server/index.js"
   },
@@ -44,6 +43,7 @@
     "jquery": "^2.2.3",
     "jsdom": "^9.0.0",
     "n": "^2.1.0",
+    "pg": "6.0.1",
     "socket.io": "^1.4.6",
     "sqlite3": "^3.1.4",
     "wait.for": "^0.6.6"

@@ -3,7 +3,6 @@ var env      = require('jsdom').env;
 var diff     = require('deep-diff');
 var vm       = require("vm");
 var fs       = require('fs');
-var sqlite3  = require('sqlite3').verbose();
 var glob     = require("glob");
 
 var io=null;
@@ -25,7 +24,7 @@ env("<html></html>", function (errors, window) {
     vm.runInThisContext(fs.readFileSync(__dirname + "/html/assets/javascript/app.js"));
 });
 
-var db = persistence.open();
+var db = persistence.client;
 
 module.exports = {
     socket:function( socket){
@@ -33,46 +32,45 @@ module.exports = {
     },
 
     weights: function(file, callback){
-        file = persistence.dir+"/"+file;
-        db.serialize(function() {
-            db.all("SELECT conn, value from weight where file=?",file, function(err, row) {
-                callback(row);
-            });
+        var query =db.query("SELECT conn, value from weight where file=$1",[file]);
+        query.on("row", function (row, result) {
+            result.addRow(row);
+        });
+        query.on("end", function (result) {
+          callback(result.rows);
         });
     },
 
     process: function(data) {
         console.log("===process");
 
-        db.serialize(function() {
-
-            // Try to load an already stored JSON document from the Database
-            //
-            db.get("SELECT doc FROM json where id=?", data.jsonId, function(err, row){
-                if(err===null){
-                    // INSERT the json into the DB for further processing
-                    if(!row){
-                        db.run("INSERT INTO  json values (?, ?)", data.jsonId, JSON.stringify(data.json), function(){
-                            var jsonDiff = diff( {}, data.json);
-                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                            processSankey(data);
-                        });
-                    }
-                    // UPDATE them to make a DIFF
-                    else{
-                        db.run("UPDATE json set doc=? where id=?", JSON.stringify(data.json), data.jsonId, function(){
-                            var jsonDiff = diff( JSON.parse(row.doc), data.json);
-                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                            processSankey(data);
-                        });
-                    }
-                }
-                else{
-                    console.log(err);
-                }
-            });
+        // Try to load an already stored JSON document from the Database
+        //
+        var query =db.query("SELECT doc FROM json where id=$1", [data.jsonId]);
+        query.on("row", function (row, result) {
+            result.addRow(row);
         });
-
+        query.on("end", function(result){
+            var row = result.rows.length>0?result.rows[0]:undefined;
+            // INSERT the json into the DB for further processing
+            if(!row){
+                query=db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)]);
+                query.on("end", function(){
+                    var jsonDiff = diff( {}, data.json);
+                    data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                    processSankey(data);
+                });
+            }
+            // UPDATE them to make a DIFF
+            else{
+                query=db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId]);
+                query.on("end", function(){
+                    var jsonDiff = diff( JSON.parse(row.doc), data.json);
+                    data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                    processSankey(data);
+                });
+            }
+        });
     }
 };
 
@@ -83,54 +81,52 @@ function processSankey(data){
     console.log("===processSankey");
     // process all sankey diagrams and update the status of each connection
     //
-    glob(persistence.dir+"/*.sankey", {}, function (er, files) {
-        files.forEach(function (file) {
-            console.log("====== file:"+file);
-            data.file = file;
+    var query = persistence.client.query("SELECT * from file");
+    query.on("row", function (row, result) {result.addRow(row);});
+    query.on("end", function (result) {
+
+        result.rows.forEach(function (file) {
+            data.file = file.id;
+            console.log("====== file:"+data.file);
             // draw2d is loaded and you can now read some documents into a HeadlessCanvas
             //
-            var diagram = JSON.parse(fs.readFileSync(data.file)).content.diagram;
+            var diagram = JSON.parse(file.doc).content.diagram;
             var canvas  = new draw2d.HeadlessCanvas();
             var reader  = new draw2d.io.json.Reader();
             reader.unmarshal(canvas, diagram);
             var figure = null;
 
-            db.serialize(function() {
-                console.log("serialize");
-                // check if we have already a status for the given document and sankey report
+            // check if we have already a status for the given document and sankey report
+            //
+            query = persistence.client.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file]);
+            query.on("row", function (row, result) {result.addRow(row);});
+            query.on("end", function (result) {
+                console.log("select node....");
+                // we have processed this JSON document with this sankey diagram once before
                 //
-                db.get("SELECT node FROM status where id=? and file=?", data.jsonId, data.file, function (err, record) {
-                    console.log("select node....");
-                    if (err == null) {
-                        // we have processed this JSON document with this sankey diagram once before
-                        //
-                        if (record) {
-                            figure = canvas.getFigure(record.node);
-                            data = $.extend({}, data, {figure: figure});
-                            processNode(data);
-                        }
-                        else {
-                            figure = canvas.getFigures().find(function (figure) {
-                                return figure instanceof sankey.shape.Start;
-                            });
-                            // check if the "start" node match to the match conditions
-                            //
-                            data = $.extend({}, data, {figure: figure});
-                            if (matchNode(data)) {
-                                processNode(data);
-                            }
-                            else {
-                                // didn't match the start condition for the very first node.
-                                // in this case the complete diagram isnT' responsive for this
-                                // JSON document
-                            }
-                        }
+                var record = result.rows.length>0?result.rows[0]:undefined;
+                if (record) {
+                    figure = canvas.getFigure(record.node);
+                    data = $.extend({}, data, {figure: figure});
+                    processNode(data);
+                }
+                else {
+                    figure = canvas.getFigures().find(function (figure) {
+                        return figure instanceof sankey.shape.Start;
+                    });
+                    // check if the "start" node match to the match conditions
+                    //
+                    data = $.extend({}, data, {figure: figure});
+                    if (matchNode(data)) {
+                        processNode(data);
                     }
                     else {
-                        console.log(err);
+                        // didn't match the start condition for the very first node.
+                        // in this case the complete diagram isnT' responsive for this
+                        // JSON document
                     }
-                });
-            });
+                }
+         });
         });
     });
 }
@@ -140,81 +136,66 @@ function processNode(data)
 {
     console.log("==== processNode");
 
-    db.serialize(function() {
-        db.run("INSERT into status values (?,?,?)", data.jsonId, data.file, data.figure.id, function (err, record) {
+    if(data.figure===null){
+        return;
+    }
 
-            var connection = null;
-            data.figure.getOutputPorts().each(function(index, port){
-                var connections = port.getConnections().asArray();
-                connections.sort(function(a,b){
-                    if(a.getUserData().transitions && b.getUserData().transitions) {
-                        return b.getUserData().transitions.length - a.getUserData().transitions.length;
-                    }
+    db.query("INSERT into status values ($1,$2,$3) ON CONFLICT (id, file) DO UPDATE SET node=$3", [data.jsonId, data.file, data.figure.id])
+        .on("row", function (row, result) {result.addRow(row);})
+        .on("end", function (result) {
 
-                    return 0;
-                });
-
-                connections.forEach(function(conn){
-                    data = $.extend({},data, {figure:conn});
-                    if(connection===null&&matchNode(data)){
-                        connection = conn;
-                    }
-                });
-                return connection===null; // false==abort criteria
+        var connection = null;
+        data.figure.getOutputPorts().each(function(index, port){
+            var connections = port.getConnections().asArray();
+            connections.sort(function(a,b){
+                if(a.getUserData().transitions && b.getUserData().transitions) {
+                    return b.getUserData().transitions.length - a.getUserData().transitions.length;
+                }
+                return 0;
             });
 
-            if(connection!==null){
-                var nextFigure = connection.getTarget().getParent();
-                db.run("UPDATE status set node=? where id=? and file=?", nextFigure.id, data.jsonId, data.file, function (err) {
-                    if (err === null) {
-                        //    console.log(connection.id, file, 0);
-                        db.all("SELECT conn, value, file from weight", function (err, row) {
-                            //        console.log(row);
-                        });
-                        db.run("INSERT OR IGNORE INTO weight VALUES(?, ?, ?)", connection.id, data.file, 0, function (err) {
-                            if (err !== null) {
-                                console.log(err);
-                                return;
-                            }
-                            db.run("UPDATE weight set value=value+1 where conn=?", connection.id, function (err) {
-                                if (err !== null) {
-                                    console.log(err);
-                                    return;
-                                }
-                                db.all("SELECT conn, value from weight where file=?", data.file, function (err, row) {
-                                    if (err !== null) {
-                                        console.log(err);
-                                        return;
-                                    }
-                                    io.sockets.emit("connection:change", row);
-                                    if (nextFigure instanceof sankey.shape.End) {
-                                        cleanupNode(data);
-                                    }
-                                });
-                            });
-                        });
-                    }
-                    else {
-                        console.log(err);
-                    }
-                });
-            }
+            connections.forEach(function(conn){
+                data = $.extend({},data, {figure:conn});
+                if(connection===null&&matchNode(data)){
+                    connection = conn;
+                }
+            });
+            return connection===null; // false==abort criteria
         });
+        if(connection!==null){
+            var nextFigure = connection.getTarget().getParent();
+            db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
+                .on("end", function (err) {
+                db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3)  ON CONFLICT (conn) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 0])
+                    .on("end", function (err) {
+                    db.query('SELECT * from weight where file=$1', [ data.file])
+                        .on("row", function (row, result) {result.addRow(row);})
+                        .on("end", function (result) {
+                            io.sockets.emit("connection:change", result.rows);
+                            if (nextFigure instanceof sankey.shape.End) {
+                                cleanupNode(data);
+                            }
+                    });
+                });
+
+            });
+        }
     });
 }
 
 function cleanupNode(data)
 {
     console.log("=== cleanupNode "+data.file);
-    db.serialize(function() {
-        db.run("DELETE from status where id=? and file=?",  data.jsonId, data.file,function(err){
-    //        console.log(err)
-        });
-    });
+    db.query("DELETE from status where id=$1 and file=$2", [ data.jsonId, data.file]);
 }
 
 function matchNode(data)
 {
+
+    if(data.figure===null){
+        return false;
+    }
+
     console.log("=====matchNode:"+data.figure.NAME);
     var matched=true;
     console.log(data.figure.getUserData());
