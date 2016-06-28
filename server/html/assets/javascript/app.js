@@ -490,9 +490,7 @@ sankey.View = draw2d.Canvas.extend({
         var maxStroke = 20;
         this.getLines().each(function(index, conn){
             // [A, B] --> [a, b]
-
-            conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/(max-min) + minStroke);
-            console.log(conn.getStroke());
+            conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/Math.max(1,(max-min)) + minStroke);
         });
 
     },
