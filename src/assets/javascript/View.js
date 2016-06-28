@@ -43,7 +43,7 @@ sankey.View = draw2d.Canvas.extend({
         weights.forEach(function(weight){
             var conn = _this.getLine(weight.conn);
             if(conn!==null){
-                conn.setWeight( Math.max(2,weight.value));
+                conn.setWeight(weight.value);
             }
         });
 
@@ -58,9 +58,7 @@ sankey.View = draw2d.Canvas.extend({
         var maxStroke = 20;
         this.getLines().each(function(index, conn){
             // [A, B] --> [a, b]
-
-            conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/(max-min) + minStroke);
-            console.log(conn.getStroke());
+            conn.setStroke((conn.getWeight() - min)*(maxStroke-minStroke)/Math.max(1,(max-min)) + minStroke);
         });
 
     },
