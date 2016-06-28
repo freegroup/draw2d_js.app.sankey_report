@@ -43,7 +43,7 @@ sankey.View = draw2d.Canvas.extend({
         weights.forEach(function(weight){
             var conn = _this.getLine(weight.conn);
             if(conn!==null){
-                conn.setWeight(weight.value);
+                conn.setWeight( Math.max(2,weight.value));
             }
         });
 
