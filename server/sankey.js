@@ -86,50 +86,50 @@ function processSankey(data){
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
 
-        result.rows.forEach(function (file) {
-            data.file = file.id;
-            console.log("====== file:"+data.file);
-            // draw2d is loaded and you can now read some documents into a HeadlessCanvas
-            //
-            var diagram = JSON.parse(file.doc).content.diagram;
-            var canvas  = new draw2d.HeadlessCanvas();
-            var reader  = new draw2d.io.json.Reader();
-            reader.unmarshal(canvas, diagram);
-            var figure = null;
+            result.rows.forEach(function (file) {
+                data = $.extend({}, data, {file: file.id});
+                console.log("====== file:"+data.file);
+                // draw2d is loaded and you can now read some documents into a HeadlessCanvas
+                //
+                var diagram = JSON.parse(file.doc).content.diagram;
+                var canvas  = new draw2d.HeadlessCanvas();
+                var reader  = new draw2d.io.json.Reader();
+                reader.unmarshal(canvas, diagram);
+                var figure = null;
 
-            // check if we have already a status for the given document and sankey report
-            //
-            db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
-                .on('error', function(error) {console.log(error);})
-                .on("row", function (row, result) {result.addRow(row);})
-                .on("end", function (result) {
-                    console.log("select node....");
-                    // we have processed this JSON document with this sankey diagram once before
-                    //
-                    var record = result.rows.length>0?result.rows[0]:undefined;
-                    if (record) {
-                        figure = canvas.getFigure(record.node);
-                        data = $.extend({}, data, {figure: figure});
-                        processNode(data);
-                    }
-                    else {
-                        figure = canvas.getFigures().find(function (figure) {
-                            return figure instanceof sankey.shape.Start;
-                        });
-                        // check if the "start" node match to the match conditions
+                // check if we have already a status for the given document and sankey report
+                //
+                db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
+                    .on('error', function(error) {console.log(error);})
+                    .on("row", function (row, result) {result.addRow(row);})
+                    .on("end", function (result) {
+                        console.log("select node....");
+                        // we have processed this JSON document with this sankey diagram once before
                         //
-                        data = $.extend({}, data, {figure: figure});
-                        if (matchNode(data)) {
+                        var record = result.rows.length>0?result.rows[0]:undefined;
+                        if (record) {
+                            figure = canvas.getFigure(record.node);
+                            data = $.extend({}, data, {figure: figure});
                             processNode(data);
                         }
                         else {
-                            // didn't match the start condition for the very first node.
-                            // in this case the complete diagram isnT' responsive for this
-                            // JSON document
+                            figure = canvas.getFigures().find(function (figure) {
+                                return figure instanceof sankey.shape.Start;
+                            });
+                            // check if the "start" node match to the match conditions
+                            //
+                            data = $.extend({}, data, {figure: figure});
+                            if (matchNode(data)) {
+                                processNode(data);
+                            }
+                            else {
+                                // didn't match the start condition for the very first node.
+                                // in this case the complete diagram isnT' responsive for this
+                                // JSON document
+                            }
                         }
-                    }
+                });
             });
-        });
     });
 }
 
