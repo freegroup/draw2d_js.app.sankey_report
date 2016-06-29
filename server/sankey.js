@@ -165,19 +165,23 @@ function processNode(data)
                 });
                 return connection===null; // false==abort criteria
             });
-            console.log("Found connection for UPDATE status:", connection);
+            console.log("Found connection for UPDATE status:", connection!==null);
             if(connection!==null){
                 var nextFigure = connection.getTarget().getParent();
+                console.log(" next node", nextfigure.id);
                 db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
                     .on('error', function(error) {console.log(error);})
                     .on("end", function () {
+                        console.log("       UPDATE STATUS done");
                         db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3) ON CONFLICT (conn) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 0])
                             .on('error', function(error) {console.log(error);})
                             .on("end", function (err) {
+                                console.log("       INSERT WEIGHT done");
                                 db.query('SELECT * from weight where file=$1', [ data.file])
                                     .on('error', function(error) {console.log(error);})
                                     .on("row", function (row, result) {result.addRow(row);})
                                     .on("end", function (result) {
+                                        console.log("       EMIT WEIGHT done");
                                         io.sockets.emit("connection:change", result.rows);
                                         if (nextFigure instanceof sankey.shape.End) {
                                             cleanupNode(data);
