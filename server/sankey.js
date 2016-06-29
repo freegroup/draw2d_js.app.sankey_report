@@ -165,6 +165,7 @@ function processNode(data)
                 });
                 return connection===null; // false==abort criteria
             });
+            console.log("Found connection for UPDATE status:", connection);
             if(connection!==null){
                 var nextFigure = connection.getTarget().getParent();
                 db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
