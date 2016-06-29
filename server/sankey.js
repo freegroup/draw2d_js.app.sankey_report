@@ -168,7 +168,7 @@ function processNode(data)
             console.log("Found connection for UPDATE status:", connection!==null);
             if(connection!==null){
                 var nextFigure = connection.getTarget().getParent();
-                console.log(" next node", nextfigure.id);
+                console.log(" next node", nextFigure.id);
                 db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
                     .on('error', function(error) {console.log(error);})
                     .on("end", function () {
