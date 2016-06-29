@@ -203,7 +203,7 @@ function matchNode(data)
     }
 
     console.log("=====matchNode:"+data.figure.NAME);
-    var matched=true;
+    var matched=false;
     console.log(data.figure.getUserData());
     var transitions = $.extend({},{transitions:[]},data.figure.getUserData()).transitions;
     console.log(transitions);
@@ -228,32 +228,34 @@ function matchNode(data)
             switch (operation) {
                 case "equals":
                     console.log(">>>equals");
-                    matched = matched && (currentValue === value);
+                    matched = (currentValue === value);
                     break;
                 case "!equals":
                     console.log(">>>!equals");
-                    matched = matched && (currentValue !== value);
+                    matched = (currentValue !== value);
                     break;
                 case "null":
                     console.log(">>>null");
-                    matched = matched && (currentValue === null);
+                    matched = (currentValue === null);
                     break;
                 case "!null":
                     console.log(">>>!null");
-                    matched = matched && (currentValue !== null);
+                    matched = (currentValue !== null);
                     break;
                 case "changed":
                     console.log(">>>changed");
-                    matched = matched && (data.diff.indexOf(path) >= 0);
+                    matched = (data.diff.indexOf(path) >= 0);
                     break;
                 case "!changed":
                     console.log(">>>!changed");
-                    matched = matched && (data.diff.indexOf(path) < 0);
+                    matched = (data.diff.indexOf(path) < 0);
                     break;
                 case "undefined":
                     console.log(">>>undefined");
-                    matched = matched && (typeof currentValue === "undefined");
+                    matched = (typeof currentValue === "undefined");
                     break;
+                default:
+                    console.log("unahandled switch/case value ["+operation+"]");
             }
         }catch(exc){
             console.log(exc);
