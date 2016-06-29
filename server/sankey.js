@@ -47,7 +47,7 @@ module.exports = {
         //
         db.query("SELECT doc FROM json where id=$1", [data.jsonId])
             .on('error', function(error) {console.log(error);})
-            .on("row", function (row, result) {result.addRow(row);});
+            .on("row", function (row, result) {result.addRow(row);})
             .on("end", function(result){
                 var row = result.rows.length>0?result.rows[0]:undefined;
                 // INSERT the json into the DB for further processing
