@@ -142,7 +142,8 @@ function processNode(data)
         return;
     }
 
-    db.query("INSERT into status values ($1,$2,$3) ON CONFLICT (id, file) DO UPDATE SET node=$3", [data.jsonId, data.file, data.figure.id])
+    console.log("INSERT into status: ",data.jsonId, data.file, data.figure.id);
+    db.query("INSERT into status (id, file, node) values ($1,$2,$3) ON CONFLICT (id, file) DO UPDATE SET node=$3", [data.jsonId, data.file, data.figure.id])
         .on('error', function(error) {console.log(error);})
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
@@ -168,7 +169,7 @@ function processNode(data)
             console.log("Found connection for UPDATE status:", connection!==null);
             if(connection!==null){
                 var nextFigure = connection.getTarget().getParent();
-                console.log(" next node", nextFigure.id);
+                console.log("UPDATE status: ",data.jsonId, data.file, nextFigure.id);
                 db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
                     .on('error', function(error) {console.log(error);})
                     .on("end", function () {
