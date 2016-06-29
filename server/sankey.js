@@ -81,9 +81,10 @@ function processSankey(data){
     console.log("===processSankey");
     // process all sankey diagrams and update the status of each connection
     //
-    var query = persistence.client.query("SELECT * from file");
-    query.on("row", function (row, result) {result.addRow(row);});
-    query.on("end", function (result) {
+    var query = persistence.client.query("SELECT * from file")
+        .on('error', function(error) {console.log(error);})
+        .on("row", function (row, result) {result.addRow(row);})
+        .on("end", function (result) {
 
         result.rows.forEach(function (file) {
             data.file = file.id;
@@ -98,35 +99,36 @@ function processSankey(data){
 
             // check if we have already a status for the given document and sankey report
             //
-            query = persistence.client.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file]);
-            query.on("row", function (row, result) {result.addRow(row);});
-            query.on("end", function (result) {
-                console.log("select node....");
-                // we have processed this JSON document with this sankey diagram once before
-                //
-                var record = result.rows.length>0?result.rows[0]:undefined;
-                if (record) {
-                    figure = canvas.getFigure(record.node);
-                    data = $.extend({}, data, {figure: figure});
-                    processNode(data);
-                }
-                else {
-                    figure = canvas.getFigures().find(function (figure) {
-                        return figure instanceof sankey.shape.Start;
-                    });
-                    // check if the "start" node match to the match conditions
+            query = persistence.client.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
+                .on('error', function(error) {console.log(error);})
+                .on("row", function (row, result) {result.addRow(row);})
+                .on("end", function (result) {
+                    console.log("select node....");
+                    // we have processed this JSON document with this sankey diagram once before
                     //
-                    data = $.extend({}, data, {figure: figure});
-                    if (matchNode(data)) {
+                    var record = result.rows.length>0?result.rows[0]:undefined;
+                    if (record) {
+                        figure = canvas.getFigure(record.node);
+                        data = $.extend({}, data, {figure: figure});
                         processNode(data);
                     }
                     else {
-                        // didn't match the start condition for the very first node.
-                        // in this case the complete diagram isnT' responsive for this
-                        // JSON document
+                        figure = canvas.getFigures().find(function (figure) {
+                            return figure instanceof sankey.shape.Start;
+                        });
+                        // check if the "start" node match to the match conditions
+                        //
+                        data = $.extend({}, data, {figure: figure});
+                        if (matchNode(data)) {
+                            processNode(data);
+                        }
+                        else {
+                            // didn't match the start condition for the very first node.
+                            // in this case the complete diagram isnT' responsive for this
+                            // JSON document
+                        }
                     }
-                }
-         });
+            });
         });
     });
 }
@@ -141,45 +143,49 @@ function processNode(data)
     }
 
     db.query("INSERT into status values ($1,$2,$3) ON CONFLICT (id, file) DO UPDATE SET node=$3", [data.jsonId, data.file, data.figure.id])
+        .on('error', function(error) {console.log(error);})
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
 
-        var connection = null;
-        data.figure.getOutputPorts().each(function(index, port){
-            var connections = port.getConnections().asArray();
-            connections.sort(function(a,b){
-                if(a.getUserData().transitions && b.getUserData().transitions) {
-                    return b.getUserData().transitions.length - a.getUserData().transitions.length;
-                }
-                return 0;
-            });
-
-            connections.forEach(function(conn){
-                data = $.extend({},data, {figure:conn});
-                if(connection===null&&matchNode(data)){
-                    connection = conn;
-                }
-            });
-            return connection===null; // false==abort criteria
-        });
-        if(connection!==null){
-            var nextFigure = connection.getTarget().getParent();
-            db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
-                .on("end", function (err) {
-                db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3)  ON CONFLICT (conn) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 0])
-                    .on("end", function (err) {
-                    db.query('SELECT * from weight where file=$1', [ data.file])
-                        .on("row", function (row, result) {result.addRow(row);})
-                        .on("end", function (result) {
-                            io.sockets.emit("connection:change", result.rows);
-                            if (nextFigure instanceof sankey.shape.End) {
-                                cleanupNode(data);
-                            }
-                    });
+            var connection = null;
+            data.figure.getOutputPorts().each(function(index, port){
+                var connections = port.getConnections().asArray();
+                connections.sort(function(a,b){
+                    if(a.getUserData().transitions && b.getUserData().transitions) {
+                        return b.getUserData().transitions.length - a.getUserData().transitions.length;
+                    }
+                    return 0;
                 });
 
+                connections.forEach(function(conn){
+                    data = $.extend({},data, {figure:conn});
+                    if(connection===null&&matchNode(data)){
+                        connection = conn;
+                    }
+                });
+                return connection===null; // false==abort criteria
             });
-        }
+            if(connection!==null){
+                var nextFigure = connection.getTarget().getParent();
+                db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
+                    .on('error', function(error) {console.log(error);})
+                    .on("end", function () {
+                        db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3) ON CONFLICT (conn) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 0])
+                            .on('error', function(error) {console.log(error);})
+                            .on("end", function (err) {
+                                db.query('SELECT * from weight where file=$1', [ data.file])
+                                    .on('error', function(error) {console.log(error);})
+                                    .on("row", function (row, result) {result.addRow(row);})
+                                    .on("end", function (result) {
+                                        io.sockets.emit("connection:change", result.rows);
+                                        if (nextFigure instanceof sankey.shape.End) {
+                                            cleanupNode(data);
+                                        }
+                                    });
+                                });
+
+                    });
+            }
     });
 }
 
