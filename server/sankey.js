@@ -217,39 +217,43 @@ function matchNode(data)
     }
 
     transitions.forEach(function(element){
-        var path = element.jsonPath;
-        var operation = element.operation;
-        var value = element.value;
-        var currentValue = attributeByPath(data.json,path);
-        switch(operation){
-            case "equals":
-                console.log(">>>equals");
-                matched = matched && (currentValue===value);
-                break;
-            case "!equals":
-                console.log(">>>!equals");
-                matched = matched && (currentValue!==value);
-                break;
-            case "null":
-                console.log(">>>null");
-                matched = matched && (currentValue===null);
-                break;
-            case "!null":
-                console.log(">>>!null");
-                matched = matched && (currentValue!==null);
-                break;
-            case "changed":
-                console.log(">>>changed");
-                matched = matched && (data.diff.indexOf(path)>=0);
-                break;
-            case "!changed":
-                console.log(">>>!changed");
-                matched = matched && (data.diff.indexOf(path)<0);
-                break;
-            case "undefined":
-                console.log(">>>undefined");
-                matched = matched && (typeof currentValue==="undefined");
-                break;
+        try {
+            var path = element.jsonPath;
+            var operation = element.operation;
+            var value = element.value;
+            var currentValue = attributeByPath(data.json, path);
+            switch (operation) {
+                case "equals":
+                    console.log(">>>equals");
+                    matched = matched && (currentValue === value);
+                    break;
+                case "!equals":
+                    console.log(">>>!equals");
+                    matched = matched && (currentValue !== value);
+                    break;
+                case "null":
+                    console.log(">>>null");
+                    matched = matched && (currentValue === null);
+                    break;
+                case "!null":
+                    console.log(">>>!null");
+                    matched = matched && (currentValue !== null);
+                    break;
+                case "changed":
+                    console.log(">>>changed");
+                    matched = matched && (data.diff.indexOf(path) >= 0);
+                    break;
+                case "!changed":
+                    console.log(">>>!changed");
+                    matched = matched && (data.diff.indexOf(path) < 0);
+                    break;
+                case "undefined":
+                    console.log(">>>undefined");
+                    matched = matched && (typeof currentValue === "undefined");
+                    break;
+            }
+        }catch(exc){
+            console.log(exc);
         }
     });
 
