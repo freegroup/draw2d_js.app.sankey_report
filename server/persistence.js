@@ -7,7 +7,7 @@ client.connect();
 
 client.query("CREATE TABLE IF NOT EXISTS json   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
 client.query("CREATE TABLE IF NOT EXISTS status (id VARCHAR(500),  file VARCHAR(500), node VARCHAR(500),  UNIQUE(id, file))");
-client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500) PRIMARY KEY, file VARCHAR(500), value bigint)");
+client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500), file VARCHAR(500), value bigint,   UNIQUE(conn, file))");
 client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
 
 
