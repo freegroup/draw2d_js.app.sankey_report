@@ -66,6 +66,13 @@ module.exports = {
                         .on('error', function(error) {console.log(error);})
                         .on("end", function(){
                             var jsonDiff = diff( JSON.parse(row.doc), data.json);
+                            if(!jsonDiff){
+                                jsonDiff = [];
+                                console.log("---------- jsonDIF === undefined");
+                                console.log(row.doc);
+                                console.log(data.json);
+                                console.log("---------------------------");
+                            }
                             data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
                             processSankey(data);
                         });
