@@ -204,13 +204,13 @@ function matchNode(data)
 
     console.log("=====matchNode:"+data.figure.NAME);
     var matched=false;
-    console.log(data.figure.getUserData());
     var transitions = $.extend({},{transitions:[]},data.figure.getUserData()).transitions;
-    console.log(transitions);
+    console.log("   all transitions:",transitions);
     transitions = transitions.filter(function(e){return e.jsonPath!=="";});
     transitions = transitions.filter(function(e){return e.jsonPath;});
 
-    console.log(transitions);
+    console.log("  filtered transitions:",transitions);
+
     // no constraint -> always true
     if(transitions.length===0){
         return false;
