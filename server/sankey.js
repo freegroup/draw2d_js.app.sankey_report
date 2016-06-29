@@ -187,6 +187,7 @@ function processNode(data)
                                         if (nextFigure instanceof sankey.shape.End) {
                                             cleanupNode(data);
                                         }
+                                        dump();
                                     });
                                 });
 
@@ -273,6 +274,33 @@ function matchNode(data)
 }
 
 
+function dump(){
+    console.log("Files:");
+    db.query("SELECT * from file")
+        .on('error', function(error) {console.log(error);})
+        .on("row", function (row, result) {
+            console.log("    ",row.id);
+        })
+        .on("end", function (result) {
+            console.log("Status:");
+            db.query("SELECT * from status")
+                .on('error', function(error) {console.log(error);})
+                .on("row", function (row, result) {
+                    console.log("    ",row.id, row.file, row.node);
+                })
+                .on("end", function (result) {
+                    console.log("Weight:");
+                    db.query("SELECT * from weight")
+                        .on('error', function(error) {console.log(error);})
+                        .on("row", function (row, result) {
+                            console.log("    ",row.conn, row.file, row.value);
+                        })
+                        .on("end", function (result) {
+
+                        });
+                });
+        });
+}
 
 function attributeByPath(o, s)
 {
