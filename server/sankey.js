@@ -181,7 +181,7 @@ function processNode(data)
                     .on('error', function(error) {console.log(error);})
                     .on("end", function () {
                         console.log("       UPDATE STATUS done");
-                        db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3) ON CONFLICT (conn, file) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 0])
+                        db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3) ON CONFLICT (conn, file) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 1])
                             .on('error', function(error) {console.log(error);})
                             .on("end", function (err) {
                                 console.log("       INSERT WEIGHT done:",connection.id, data.file);
