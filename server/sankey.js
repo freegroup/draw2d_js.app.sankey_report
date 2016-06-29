@@ -211,13 +211,11 @@ function cleanupNode(data)
 
 function matchNode(data)
 {
-
     if(data.figure===null){
         return false;
     }
 
     console.log("=====matchNode:"+data.figure.NAME);
-    var matched=false;
     var transitions = $.extend({},{transitions:[]},data.figure.getUserData()).transitions;
     console.log("   all transitions:",transitions);
     transitions = transitions.filter(function(e){return e.jsonPath!=="";});
@@ -230,10 +228,8 @@ function matchNode(data)
         return false;
     }
 
+    var matched=true;
     transitions.forEach(function(element){
-        if(matched===true){
-            return;
-        }
         try {
             var path = element.jsonPath;
             var operation = element.operation;
@@ -242,31 +238,31 @@ function matchNode(data)
             switch (operation) {
                 case "equals":
                     console.log(">>>equals");
-                    matched = (currentValue === value);
+                    matched = matched && (currentValue === value);
                     break;
                 case "!equals":
                     console.log(">>>!equals");
-                    matched = (currentValue !== value);
+                    matched = matched && (currentValue !== value);
                     break;
                 case "null":
                     console.log(">>>null");
-                    matched = (currentValue === null);
+                    matched = matched && (currentValue === null);
                     break;
                 case "!null":
                     console.log(">>>!null");
-                    matched = (currentValue !== null);
+                    matched = matched && (currentValue !== null);
                     break;
                 case "changed":
                     console.log(">>>changed");
-                    matched = (data.diff.indexOf(path) >= 0);
+                    matched = matched && (data.diff.indexOf(path) >= 0);
                     break;
                 case "!changed":
                     console.log(">>>!changed");
-                    matched = (data.diff.indexOf(path) < 0);
+                    matched = matched && (data.diff.indexOf(path) < 0);
                     break;
                 case "undefined":
                     console.log(">>>undefined");
-                    matched = (typeof currentValue === "undefined");
+                    matched = matched && (typeof currentValue === "undefined");
                     break;
                 default:
                     console.log("unahandled switch/case value ["+operation+"]");
@@ -276,6 +272,8 @@ function matchNode(data)
         }
     });
 
+    matched = matched && transitions.length>0;
+    
     console.log("matched:"+matched);
     return matched;
 }
