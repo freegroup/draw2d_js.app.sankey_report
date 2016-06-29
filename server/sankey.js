@@ -32,13 +32,12 @@ module.exports = {
     },
 
     weights: function(file, callback){
-        var query =db.query("SELECT conn, value from weight where file=$1",[file]);
-        query.on("row", function (row, result) {
-            result.addRow(row);
-        });
-        query.on("end", function (result) {
-          callback(result.rows);
-        });
+        db.query("SELECT conn, value from weight where file=$1",[file])
+            .on('error', function(error) {console.log(error);})
+            .on("row", function (row, result) {result.addRow(row);})
+            .on("end", function (result) {
+              callback(result.rows);
+            });
     },
 
     process: function(data) {
@@ -46,31 +45,32 @@ module.exports = {
 
         // Try to load an already stored JSON document from the Database
         //
-        var query =db.query("SELECT doc FROM json where id=$1", [data.jsonId]);
-        query.on("row", function (row, result) {
-            result.addRow(row);
-        });
-        query.on("end", function(result){
-            var row = result.rows.length>0?result.rows[0]:undefined;
-            // INSERT the json into the DB for further processing
-            if(!row){
-                query=db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)]);
-                query.on("end", function(){
-                    var jsonDiff = diff( {}, data.json);
-                    data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                    processSankey(data);
-                });
-            }
-            // UPDATE them to make a DIFF
-            else{
-                query=db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId]);
-                query.on("end", function(){
-                    var jsonDiff = diff( JSON.parse(row.doc), data.json);
-                    data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                    processSankey(data);
-                });
-            }
-        });
+        db.query("SELECT doc FROM json where id=$1", [data.jsonId])
+            .on('error', function(error) {console.log(error);})
+            .on("row", function (row, result) {result.addRow(row);});
+            .on("end", function(result){
+                var row = result.rows.length>0?result.rows[0]:undefined;
+                // INSERT the json into the DB for further processing
+                if(!row){
+                    db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)])
+                        .on('error', function(error) {console.log(error);})
+                        .on("end", function(){
+                            var jsonDiff = diff( {}, data.json);
+                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                            processSankey(data);
+                        });
+                }
+                // UPDATE them to make a DIFF
+                else{
+                    db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId])
+                        .on('error', function(error) {console.log(error);})
+                        .on("end", function(){
+                            var jsonDiff = diff( JSON.parse(row.doc), data.json);
+                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                            processSankey(data);
+                        });
+                }
+            });
     }
 };
 
@@ -81,7 +81,7 @@ function processSankey(data){
     console.log("===processSankey");
     // process all sankey diagrams and update the status of each connection
     //
-    var query = persistence.client.query("SELECT * from file")
+    db.query("SELECT * from file")
         .on('error', function(error) {console.log(error);})
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
@@ -99,7 +99,7 @@ function processSankey(data){
 
             // check if we have already a status for the given document and sankey report
             //
-            query = persistence.client.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
+            db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
                 .on('error', function(error) {console.log(error);})
                 .on("row", function (row, result) {result.addRow(row);})
                 .on("end", function (result) {
