@@ -217,6 +217,9 @@ function matchNode(data)
     }
 
     transitions.forEach(function(element){
+        if(matched===true){
+            return;
+        }
         try {
             var path = element.jsonPath;
             var operation = element.operation;
