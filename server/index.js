@@ -86,7 +86,7 @@ app.post('/backend/hook', function(req, res){
     json.OBJECT= body.object;
     console.log(json);
     sankey.process({jsonId:id,json:json});
-    res.send('true');
+    res.send('true'); 
 });
 
 http.listen(port, function(){
