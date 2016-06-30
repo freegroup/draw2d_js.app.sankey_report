@@ -273,7 +273,7 @@ function matchNode(data)
     });
 
     matched = matched && transitions.length>0;
-    
+
     console.log("matched:"+matched);
     return matched;
 }
@@ -291,7 +291,7 @@ function dump(){
             db.query("SELECT * from status")
                 .on('error', function(error) {console.log(error);})
                 .on("row", function (row, result) {
-                    console.log("    ",row.id, row.file, row.node);
+                   // console.log("    ",row.id, row.file, row.node);
                 })
                 .on("end", function (result) {
                     console.log("Weight:");
