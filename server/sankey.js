@@ -55,7 +55,9 @@ function processEvent(){
         return;
     }
 
+    console.log("===========================================================================");
     console.log("===processEvent");
+    console.log("===========================================================================");
 
     var callback = function(){
         if(queue.length>0){
@@ -125,7 +127,7 @@ function processSankey(data, eventCallback){
 function processFile(file, data, doneCallback)
 {
     data = $.extend({}, data, {file: file.id});
-    console.log("====== file:"+data.file);
+    console.log("======================================= file:"+data.file);
     // draw2d is loaded and you can now read some documents into a HeadlessCanvas
     //
     var diagram = JSON.parse(file.doc).content.diagram;
