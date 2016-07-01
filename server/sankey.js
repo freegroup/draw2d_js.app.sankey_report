@@ -32,7 +32,7 @@ module.exports = {
     },
 
     weights: function(file, callback){
-        db.query("SELECT conn, value from weight where file=$1",[file])
+        db.query("SELECT conn, value, file from weight where file=$1",[file])
             .on('error', function(error) {console.log(error);})
             .on("row", function (row, result) {result.addRow(row);})
             .on("end", function (result) {
