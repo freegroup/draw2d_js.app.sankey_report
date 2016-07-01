@@ -4,9 +4,9 @@ var diff     = require('deep-diff');
 var vm       = require("vm");
 var fs       = require('fs');
 var glob     = require("glob");
+var io       = null;
 
-var io=null;
-
+var queue = [];
 
 // create the environment for the headless canvas processing of the Draw2D definition
 //
@@ -41,46 +41,63 @@ module.exports = {
     },
 
     process: function(data) {
-        console.log("===process");
-
-        // Try to load an already stored JSON document from the Database
-        //
-        db.query("SELECT doc FROM json where id=$1", [data.jsonId])
-            .on('error', function(error) {console.log(error);})
-            .on("row", function (row, result) {result.addRow(row);})
-            .on("end", function(result){
-                var row = result.rows.length>0?result.rows[0]:undefined;
-                // INSERT the json into the DB for further processing
-                if(!row){
-                    db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)])
-                        .on('error', function(error) {console.log(error);})
-                        .on("end", function(){
-                            var jsonDiff = diff( {}, data.json);
-                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                            processSankey(data);
-                        });
-                }
-                // UPDATE them to make a DIFF
-                else{
-                    db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId])
-                        .on('error', function(error) {console.log(error);})
-                        .on("end", function(){
-                            var jsonDiff = diff( JSON.parse(row.doc), data.json);
-                            if(!jsonDiff){
-                                jsonDiff = [];
-                            }
-                            data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                            processSankey(data);
-                        });
-                }
-            });
+       queue.push(data);
+        if(queue.length>0){
+            setTimeout(processEvent,0);
+        }
     }
+
 };
 
 
+function processEvent(){
+    if(queue.length===0){
+        return;
+    }
 
+    console.log("===processEvent");
 
-function processSankey(data){
+    var callback = function(){
+        if(queue.length>0){
+            setTimeout(processEvent,0);
+        }
+    };
+    var data = queue.shift();
+
+    // Try to load an already stored JSON document from the Database
+    //
+    db.query("SELECT doc FROM json where id=$1", [data.jsonId])
+        .on('error', function(error) {console.log(error);})
+        .on("row", function (row, result) {result.addRow(row);})
+        .on("end", function(result){
+            var row = result.rows.length>0?result.rows[0]:undefined;
+            // INSERT the json into the DB for further processing
+            if(!row){
+                db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)])
+                    .on('error', function(error) {console.log(error);})
+                    .on("end", function(){
+                        var jsonDiff = diff( {}, data.json);
+                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                        processSankey(data, callback);
+                    });
+            }
+            // UPDATE them to make a DIFF
+            else{
+                db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId])
+                    .on('error', function(error) {console.log(error);})
+                    .on("end", function(){
+                        var jsonDiff = diff( JSON.parse(row.doc), data.json);
+                        if(!jsonDiff){
+                            jsonDiff = [];
+                        }
+                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                        processSankey(data, callback);
+                    });
+            }
+        });
+}
+
+function processSankey(data, eventCallback){
     console.log("===processSankey");
     // process all sankey diagrams and update the status of each connection
     //
@@ -95,6 +112,9 @@ function processSankey(data){
                     setTimeout(function(){
                         processFile(filesToProcess.pop(),data,callback);
                     }, 0);
+                }
+                else{
+                    eventCallback();
                 }
             };
             callback();
