@@ -55,10 +55,19 @@ sankey.View = draw2d.Canvas.extend({
             ).done(function(json){
                 var reader = new draw2d.io.json.Reader();
                 reader.unmarshal(_this, json.content.diagram);
-                _this.centerDocument();
                 _this.commonPorts.each(function(i,port){
                     port.setVisible(false);
                 });
+                _this.centerDocument();
+                $.ajax({
+                    url: conf.backend.weights,
+                    method: "POST",
+                    data: {id:diagram},
+                    success:function(response){
+                        _this.updateWeights(response);
+                    }
+                });
+
             });
         }
     },
