@@ -44,6 +44,7 @@ sankey.View = draw2d.Canvas.extend({
 
         var diagram = this.getParam("diagram");
         if(diagram){
+            this.diagramName = diagram;
             $.ajax({
                     url: conf.backend.file.get,
                     method: "POST",
