@@ -113,7 +113,8 @@ sankey.locator.SmartConnectionLocator= draw2d.layout.locator.ConnectionLocator.e
         var point = line.lerp(this.boundedCorners.percentage);
         // restore the initial distance from the corner by adding the new offset
         // to the position of the child
-        figure.setPosition(point.x - this.boundedCorners.xOffset, point.y - this.boundedCorners.yOffset);
-
+        if(point) {
+            figure.setPosition(point.x - this.boundedCorners.xOffset, point.y - this.boundedCorners.yOffset);
+        }
     }
 });

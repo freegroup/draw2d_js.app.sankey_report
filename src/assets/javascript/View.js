@@ -4,13 +4,14 @@
 
 sankey.View = draw2d.Canvas.extend({
 	
-	init:function(id)
+	init:function(id, readOnly)
     {
         var _this = this;
 
 		this._super(id);
-		
-		this.setScrollArea("#"+id);
+
+
+        this.setScrollArea("#"+id);
 
         // Override the default connection type. This is used during drag&drop operations of ports.
         this.installEditPolicy(  new draw2d.policy.connection.DragConnectionCreatePolicy({
@@ -26,12 +27,40 @@ sankey.View = draw2d.Canvas.extend({
         //
         socket.on("connection:change", $.proxy(this.updateWeights, this));
 
-        this.installEditPolicy(new sankey.policy.EditPolicy());
 
         // show the ports of the elements only if the mouse cursor is close to the shape.
         //
-        this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible:50});
-        this.installEditPolicy(this.coronaFeedback);
+        if(readOnly){
+            this.installEditPolicy(new draw2d.policy.canvas.ReadOnlySelectionPolicy());
+        }
+        else {
+            this.installEditPolicy(new sankey.policy.EditPolicy());
+            this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible: 50});
+            this.installEditPolicy(this.coronaFeedback);
+        }
+
+
+        var diagram = this.getParam("diagram");
+        if(diagram){
+            $.ajax({
+                    url: conf.backend.file.get,
+                    method: "POST",
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    data:{
+                        id:diagram
+                    }
+                }
+            ).done(function(json){
+                var reader = new draw2d.io.json.Reader();
+                reader.unmarshal(_this, json.content.diagram);
+                _this.centerDocument();
+                _this.commonPorts.each(function(i,port){
+                    port.setVisible(false);
+                });
+            });
+        }
     },
 
     updateWeights: function(weights)
@@ -132,8 +161,8 @@ sankey.View = draw2d.Canvas.extend({
             //
             bb = this.getBoundingBox();
 
-            c.scrollTop(bb.y- c.height()/2);
-            c.scrollLeft(bb.x- c.width()/2);
+            c.scrollTop(bb.y-50);
+            c.scrollLeft(bb.x-50);
         }
         else{
             bb={
@@ -144,6 +173,29 @@ sankey.View = draw2d.Canvas.extend({
             c.scrollLeft(bb.x- c.width()/2);
 
         }
+    },
+
+    getParam: function( name )
+    {
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var results = regex.exec( window.location.href );
+
+        // the param isn'T part of the normal URL pattern...
+        //
+        if( results === null ) {
+            // maybe it is part in the hash.
+            //
+            regexS = "[\\#]"+name+"=([^&#]*)";
+            regex = new RegExp( regexS );
+            results = regex.exec( window.location.hash );
+            if( results === null ) {
+                return null;
+            }
+        }
+
+        return results[1];
     }
 });
 

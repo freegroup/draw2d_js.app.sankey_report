@@ -1,5 +1,5 @@
 var db = require('pg');
-db.defaults.ssl = true;
+//db.defaults.ssl = true;
 var conString = process.env.DATABASE_URL;
 var client = new db.Client(conString);
 client.connect();
@@ -22,3 +22,5 @@ module.exports = {
         client.query("DELETE from file where id=$1",file);
     }
 };
+
+

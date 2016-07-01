@@ -12,6 +12,27 @@ var glob = require("glob");
 var path = require('path');
 var bodyParser = require('body-parser');
 var persistence = require('./persistence');
+var basicAuth = require('basic-auth');
+
+
+var auth = function (req, res, next) {
+    function unauthorized(res) {
+        res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+        return res.send(401);
+    }
+
+    var user = basicAuth(req);
+
+    if (!user || !user.name || !user.pass) {
+        return unauthorized(res);
+    }
+
+    if (user.name === 'admin' && user.pass === 'admin') {
+        return next();
+    } else {
+        return unauthorized(res);
+    }
+};
 
 
 sankey.socket(io);
@@ -35,7 +56,8 @@ var port = process.env.PORT || 6800;
 // provide the DigitalTrainingStudio WebApp with this very simple
 // HTTP server. good enough for an private raspi access
 //
-app.use(express.static(__dirname+'/html'));
+app.use("/editor",[auth, express.static(__dirname+'/html')]);
+
 // to support JSON-encoded bodies
 app.use(bodyParser.json({limit: '50mb'}));
 // to support URL-encoded bodies
@@ -60,7 +82,12 @@ app.post('/backend/file/get', function (req, res) {
     });
     query.on("end", function (result) {
         res.setHeader('Content-Type', 'application/json');
-        res.send(result.rows[0].doc);
+        if(result.rows.length>0) {
+            res.send(result.rows[0].doc);
+        }
+        else{
+            res.status(404).send('Not found');
+        }
     });
 });
 

@@ -35,6 +35,7 @@
     "jshint-stylish": "latest"
   },
   "dependencies": {
+    "basic-auth": "^1.0.4",
     "body-parser": "^1.15.1",
     "bower": "^1.7.9",
     "deep-diff": "^0.3.4",

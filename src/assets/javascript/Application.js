@@ -3,12 +3,12 @@ var conf= {
 
 	backend: {
 		file: {
-			list: "backend/file/list",
-			get : "backend/file/get",
-			save: "backend/file/save"
+			list: "/backend/file/list",
+			get : "/backend/file/get",
+			save: "/backend/file/save"
 		},
-		hook:"backend/hook",
-		weights:"backend/sankey/weights"
+		hook:"/backend/hook",
+		weights:"/backend/sankey/weights"
 	}
 };
 
