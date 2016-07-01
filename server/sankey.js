@@ -84,70 +84,80 @@ function processSankey(data){
     console.log("===processSankey");
     // process all sankey diagrams and update the status of each connection
     //
+    var filesToProcess = [];
     db.query("SELECT * from file")
         .on('error', function(error) {console.log(error);})
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
-
-            result.rows.forEach(function (file) {
-                data = $.extend({}, data, {file: file.id});
-                console.log("====== file:"+data.file);
-                // draw2d is loaded and you can now read some documents into a HeadlessCanvas
-                //
-                var diagram = JSON.parse(file.doc).content.diagram;
-                var canvas  = new draw2d.HeadlessCanvas();
-                var reader  = new draw2d.io.json.Reader();
-                reader.unmarshal(canvas, diagram);
-                var figure = null;
-
-                // check if we have already a status for the given document and sankey report
-                //
-                db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
-                    .on('error', function(error) {console.log(error);})
-                    .on("row", function (row, result) {result.addRow(row);})
-                    .on("end", function (result) {
-                        console.log("select node....");
-                        // we have processed this JSON document with this sankey diagram once before
-                        //
-                        var record = result.rows.length>0?result.rows[0]:undefined;
-                        if (record) {
-                            figure = canvas.getFigure(record.node);
-                            data = $.extend({}, data, {figure: figure});
-                            processNode(data);
-                        }
-                        else {
-                            figure = canvas.getFigures().find(function (figure) {
-                                return figure instanceof sankey.shape.Start;
-                            });
-                            // check if the "start" node match to the match conditions
-                            //
-                            data = $.extend({}, data, {figure: figure});
-                            if (matchNode(data)) {
-                                processNode(data);
-                            }
-                            else {
-                                // didn't match the start condition for the very first node.
-                                // in this case the complete diagram isnT' responsive for this
-                                // JSON document
-                            }
-                        }
-                });
-            });
+            filesToProcess = result.rows;
+            var callback = function(){
+                if(filesToProcess.length>0){
+                    setTimeout(function(){
+                        processFile(filesToProcess.pop(),data,callback);
+                    }, 0);
+                }
+            };
+            callback();
     });
 }
 
 
-function processNode(data)
+function processFile(file, data, doneCallback)
+{
+    data = $.extend({}, data, {file: file.id});
+    console.log("====== file:"+data.file);
+    // draw2d is loaded and you can now read some documents into a HeadlessCanvas
+    //
+    var diagram = JSON.parse(file.doc).content.diagram;
+    var canvas  = new draw2d.HeadlessCanvas();
+    var reader  = new draw2d.io.json.Reader();
+    reader.unmarshal(canvas, diagram);
+    var figure = null;
+
+    // check if we have already a status for the given document and sankey report
+    //
+    db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
+        .on('error', function(error) {console.log(error);doneCallback();})
+        .on("row", function (row, result) {result.addRow(row);})
+        .on("end", function (result) {
+            // we have processed this JSON document with this sankey diagram once before
+            //
+            var record = result.rows.length>0?result.rows[0]:undefined;
+            if (record) {
+                figure = canvas.getFigure(record.node);
+                data = $.extend({}, data, {figure: figure});
+                processNode(data, doneCallback);
+            }
+            else {
+                figure = canvas.getFigures().find(function (figure) {
+                    return figure instanceof sankey.shape.Start;
+                });
+
+                // check if the "start" node match to the match conditions
+                //
+                data = $.extend({}, data, {figure: figure});
+                if (matchNode(data)) {
+                    processNode(data, doneCallback);
+                }
+                else {
+                    doneCallback();
+                }
+            }
+        });
+}
+
+function processNode(data, doneCallback)
 {
     console.log("==== processNode");
 
     if(data.figure===null){
+        doneCallback();
         return;
     }
 
     console.log("INSERT into status: ",data.jsonId, data.file, data.figure.id);
     db.query("INSERT into status (id, file, node) values ($1,$2,$3) ON CONFLICT (id, file) DO UPDATE SET node=$3", [data.jsonId, data.file, data.figure.id])
-        .on('error', function(error) {console.log(error);})
+        .on('error', function(error) {console.log(error);doneCallback();})
         .on("row", function (row, result) {result.addRow(row);})
         .on("end", function (result) {
 
@@ -174,15 +184,15 @@ function processNode(data)
                 var nextFigure = connection.getTarget().getParent();
                 console.log("UPDATE status: ",data.jsonId, data.file, nextFigure.id);
                 db.query("UPDATE status set node=$1 where id=$2 and file=$3", [nextFigure.id, data.jsonId, data.file])
-                    .on('error', function(error) {console.log(error);})
+                    .on('error', function(error) {console.log(error);doneCallback();})
                     .on("end", function () {
                         console.log("       UPDATE STATUS done");
                         db.query('INSERT INTO weight ( conn, file, value) VALUES($1, $2, $3) ON CONFLICT (conn, file) DO UPDATE SET value=weight.value+1', [connection.id, data.file, 1])
-                            .on('error', function(error) {console.log(error);})
+                            .on('error', function(error) {console.log(error);doneCallback();})
                             .on("end", function (err) {
                                 console.log("       INSERT WEIGHT done:",connection.id, data.file);
                                 db.query('SELECT * from weight where file=$1', [ data.file])
-                                    .on('error', function(error) {console.log(error);})
+                                    .on('error', function(error) {console.log(error);doneCallback();})
                                     .on("row", function (row, result) {result.addRow(row);})
                                     .on("end", function (result) {
                                         console.log("       EMIT WEIGHT done");
@@ -191,10 +201,14 @@ function processNode(data)
                                             cleanupNode(data);
                                         }
                                         dump();
+                                        doneCallback();
                                     });
                                 });
 
                     });
+            }
+            else{
+                doneCallback();
             }
     });
 }
