@@ -84,7 +84,7 @@ sankey.View = draw2d.Canvas.extend({
 
         // content is not for this diagram
         //
-        if(weight[0].file!==this.diagramName){
+        if(weights[0].file!==this.diagramName){
             return;
         }
 
