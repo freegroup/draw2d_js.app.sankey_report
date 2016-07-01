@@ -85,7 +85,7 @@ app.post('/backend/hook', function(req, res){
     json.EVENT = body.event;
     json.OBJECT= body.object;
     console.log(json);
-    sankey.process({jsonId:id,json:json});
+    sankey.process({jsonId:body.object+":"+id,json:json});
     res.send('true');
 });
 
