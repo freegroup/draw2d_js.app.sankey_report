@@ -8,6 +8,8 @@ sankey.View = draw2d.Canvas.extend({
     {
         var _this = this;
 
+        this.diagramName = "";
+
 		this._super(id);
 
 
@@ -74,6 +76,18 @@ sankey.View = draw2d.Canvas.extend({
 
     updateWeights: function(weights)
     {
+        // no content
+        //
+        if(weights.length===0){
+            return;
+        }
+
+        // content is not for this diagram
+        //
+        if(weight[0].file!==this.diagramName){
+            return;
+        }
+
         var _this = this;
         this.getLines().each(function(index, conn){
             conn.setWeight("0");

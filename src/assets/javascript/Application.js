@@ -167,6 +167,7 @@ sankey.Application = Class.extend(
 			var reader = new draw2d.io.json.Reader();
 			reader.unmarshal(this.view, shapeTemplate);
 		}
+		this.view.diagramName=this.currentFileHandle.title;
 		this.view.centerDocument();
 	},
 
@@ -183,7 +184,8 @@ sankey.Application = Class.extend(
                 }
             };
             new sankey.dialog.FileSave(_this.currentFileHandle).show(data, function() {
-                _this.updateWeights();
+				_this.view.diagramName=_this.currentFileHandle.title;
+				_this.updateWeights();
             });
 		});
 	},
@@ -200,8 +202,9 @@ sankey.Application = Class.extend(
 					reader.unmarshal(this.view, json.content.diagram);
                     this.setTemplate(json.content.jsonTemplate);
 					this.view.getCommandStack().markSaveLocation();
-					this.updateWeights();
 					this.view.centerDocument();
+					this.view.diagramName=this.currentFileHandle.title;
+					this.updateWeights();
 				}
 				catch(e){
 					console.log(e);
