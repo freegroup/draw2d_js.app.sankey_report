@@ -28,7 +28,6 @@ sankey.property.PropertyPane = Class.extend({
             _this.figure.setUserData(_this.getJSON());
         });
 
-        console.log(app.getAutosuggestSource());
         $('.typeahead').autocomplete({
             lookup: app.getAutosuggestSource(),
             orientation:"top",

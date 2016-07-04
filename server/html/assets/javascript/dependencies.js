@@ -20496,7 +20496,14 @@ draw2d.command.CommandDelete = draw2d.command.Command.extend({
    //    if(this.figure instanceof draw2d.Connection){
    //        this.figure.disconnect();
    //    }
-    
+
+
+       // remove all connections
+       //
+       for (var i = 0; i < this.connections.getSize(); ++i){
+           this.canvas.remove(this.connections.get(i));
+       }
+
        // remove this figure from the parent 
        //
        if(this.parent!==null){
@@ -20507,10 +20514,6 @@ draw2d.command.CommandDelete = draw2d.command.Command.extend({
        // or from the canvas
        else{
            this.canvas.remove(this.figure);
-       }
-    
-       for (var i = 0; i < this.connections.getSize(); ++i){
-          this.canvas.remove(this.connections.get(i));
        }
     }
 });
@@ -35008,7 +35011,7 @@ draw2d.policy.port.IntrusivePortsFeedbackPolicy = draw2d.policy.port.PortFeedbac
  *   Library is under GPL License (GPL)
  *   Copyright (c) 2012 Andreas Herz
  ****************************************/draw2d.Configuration = {
-    version : "6.1.46",
+    version : "6.1.48",
     i18n : {
         command : {
             move : "Move Shape",
@@ -38189,12 +38192,7 @@ draw2d.Figure = Class.extend({
              }
          }
          else{
-             // the canvas of the figure can be NULL if we delete objects in complex zenario
-             // e.g. A shape with a lot of Ports and Connections are deleted. In this case it can
-             // happen that a connect fires an event that he want draw in front of an (already deleted) port
-             if(figure.getCanvas()!==null) {
-                 this.getShapeElement().insertAfter(figure.getTopLevelShapeElement());
-             }
+             this.getShapeElement().insertAfter(figure.getTopLevelShapeElement());
              
              if(this.canvas!==null){
                  var figures = this.canvas.getFigures();
@@ -38248,12 +38246,7 @@ draw2d.Figure = Class.extend({
                  lines.insertElementAt(this,0);
              }
              if(typeof figure !=="undefined"){
-                 // the canvas of the figure can be NULL if we delete objects in complex zenario
-                 // e.g. A shape with a lot of Ports and Connections are deleted. In this case it can
-                 // happen that a connect fires an event that he want draw in front of an (already deleted) port
-                 if(figure.getCanvas()!==null) {
-                     this.getShapeElement().insertBefore(figure.getShapeElement());
-                 }
+                 this.getShapeElement().insertBefore(figure.getShapeElement());
              }
              else{
                  this.getShapeElement().toBack();
@@ -41345,10 +41338,13 @@ draw2d.shape.basic.Rectangle = draw2d.VectorFigure.extend({
            $.extend({bgColor:"#a0a0a0", color:"#1B1B1B"},attr),
            $.extend({},{
                /** @attr {String} dash The dot/dash pattern for the line style. Valid values: ["", "-", ".", "-.", "-..", ". ", "- ", "--", "- .", "--.", "--.."]*/
-               dash  : this.setDashArray
+               dash  : this.setDashArray,
+               /** @attr {String} dasharray The dot/dash pattern for the line style. Valid values: ["", "-", ".", "-.", "-..", ". ", "- ", "--", "- .", "--.", "--.."]*/
+               dasharray  : this.setDashArray
            }, setter),
            $.extend({},{
-               dash  : this.getDashArray
+               dash  : this.getDashArray,
+               dasharray  : this.getDashArray
            }, getter)
 
        );
@@ -44282,7 +44278,7 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
     * 
     *      // Alternatively you can use the attr method:
     *      figure.attr({
-    *        dash: dashPattern
+    *        dasharray: dashPattern
     *      });
     *      
     * @param dash can be one of this ["", "-", ".", "-.", "-..", ". ", "- ", "--", "- .", "--.", "--.."]
@@ -44302,7 +44298,7 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
     * Get the line style for this object.
     * 
     *      // Alternatively you can use the attr method:
-    *      figure.attr("dash");
+    *      figure.attr("dasharray");
     *  
     * @since 5.1.0
     */
@@ -44376,8 +44372,7 @@ draw2d.shape.basic.Line = draw2d.Figure.extend({
            draw2d.util.JSON.ensureDefault(attributes,"stroke-width" ,this.stroke);
        }
 
-       draw2d.util.JSON.ensureDefault(attributes,"dasharray" ,this.dasharray);
-       
+       draw2d.util.JSON.ensureDefault(attributes,"stroke-dasharray" ,this.dasharray);
        this._super(attributes);
 
        if(this.outlineStroke>0){

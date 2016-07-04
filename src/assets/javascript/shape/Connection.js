@@ -29,7 +29,6 @@ sankey.shape.Connection = draw2d.Connection.extend({
                 jsonPath:""
             }
         });
-
         this.setTargetDecorator(new draw2d.decoration.connection.ArrowDecorator());
     },
 
@@ -43,10 +42,24 @@ sankey.shape.Connection = draw2d.Connection.extend({
         return parseInt(this.label.getText());
     },
 
+    setUserData:function( obj)
+    {
+        this._super(obj);
+        var transitions =$.extend({},{transitions:[]},obj).transitions;
+        if(transitions.length===0){
+            this.setDashArray("-");
+        }
+        else{
+            this.setDashArray("");
+        }
+    },
+
+
     repaint:function(attr)
     {
         this._super($.extend({},attr,{"stroke-linecap":"butt"}));
     },
+
 
     /**
      * @method
@@ -114,5 +127,12 @@ sankey.shape.Connection = draw2d.Connection.extend({
                 this.label = figure;
             }
         }, this));
+
+        // just to update the dash/full line style. The line is drawn dotted if the user
+        // didn't entered any constraints.
+        //
+        this.setUserData(this.userData);
     }
 });
+
+
