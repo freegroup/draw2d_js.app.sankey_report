@@ -17,11 +17,10 @@ module.exports = {
 
     cleanupForFile:function(file)
     {
-        client.query("DELETE from weight where file=$1",file);
-        client.query("DELETE from status where file=$1",file);
-        client.query("DELETE from file where id=$1",file);
+        client.query("DELETE from weight where file=$1",[file]);
+        client.query("DELETE from status where file=$1",[file]);
+        client.query("DELETE from file where id=$1",[file]);
     }
 };
 
 
- 
