@@ -98,11 +98,14 @@ app.post('/backend/file/save', function (req, res) {
 });
 
 app.post('/backend/sankey/weights', function (req, res) {
-
     sankey.weights(req.body.id , function(records){
         res.send(records);
     });
+});
 
+app.get('/delete/:file', function (req, res) {
+    console.log(req.params.id);
+    res.send(req.params.id);
 });
 
 app.post('/backend/hook', function(req, res){
