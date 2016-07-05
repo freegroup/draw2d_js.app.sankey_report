@@ -104,7 +104,7 @@ app.post('/backend/sankey/weights', function (req, res) {
 });
 
 app.get('/delete/:file', function (req, res) {
-    console.log(req.params.file);
+    persistence.cleanupForFile(req.params.file);
     res.send(req.params.file);
 });
 
