@@ -110,11 +110,12 @@ app.get('/delete/:file', function (req, res) {
 
 
 app.get('/backend/dump', function (req, res) {
-    persistence.client.query('SELECT * from file ')
+    persistence.client.query('SELECT id from file ')
         .on('error', function(error) {console.log(error);doneCallback();})
         .on("row",   function (row, result) {result.addRow(row);})
         .on("end",   function (result) {
-            res.send(JSON.stringify(result));
+            res.send(result.rowCount+"\n");
+            res.send(JSON.stringify(result.rows));
         });
 });
 
