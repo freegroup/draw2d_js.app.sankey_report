@@ -114,8 +114,7 @@ app.get('/backend/dump', function (req, res) {
         .on('error', function(error) {console.log(error);doneCallback();})
         .on("row",   function (row, result) {result.addRow(row);})
         .on("end",   function (result) {
-            res.send(result.rowCount+"\n");
-            res.send(JSON.stringify(result.rows));
+            res.send(result.rowCount+"\n"+JSON.stringify(result.rows));
         });
 });
 
