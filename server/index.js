@@ -108,13 +108,38 @@ app.get('/delete/:file', function (req, res) {
     res.send(req.params.file);
 });
 
+client.query("CREATE TABLE IF NOT EXISTS json   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
+client.query("CREATE TABLE IF NOT EXISTS status (id VARCHAR(500),  file VARCHAR(500), node VARCHAR(500),  UNIQUE(id, file))");
+client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500), file VARCHAR(500), value bigint,   UNIQUE(conn, file))");
+client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
+
 
 app.get('/backend/dump', function (req, res) {
     persistence.client.query('SELECT id from file ')
         .on('error', function(error) {console.log(error);doneCallback();})
         .on("row",   function (row, result) {result.addRow(row);})
-        .on("end",   function (result) {
-            res.send(result.rowCount+"\n"+JSON.stringify(result.rows));
+        .on("end",   function (result1) {
+            persistence.client.query('SELECT id from json ')
+                .on('error', function(error) {console.log(error);doneCallback();})
+                .on("row",   function (row, result) {result.addRow(row);})
+                .on("end",   function (result2) {
+                    persistence.client.query('SELECT id from status ')
+                        .on('error', function(error) {console.log(error);doneCallback();})
+                        .on("row",   function (row, result) {result.addRow(row);})
+                        .on("end",   function (result3) {
+                            persistence.client.query('SELECT id from weight')
+                                .on('error', function(error) {console.log(error);doneCallback();})
+                                .on("row",   function (row, result) {result.addRow(row);})
+                                .on("end",   function (result4) {
+                                    res.send(
+                                        result1.rowCount + "\n" +  JSON.stringify(result1.rows)+"<br>"+
+                                        result2.rowCount + "\n" +  JSON.stringify(result2.rows)+"<br>"+
+                                        result3.rowCount + "\n" +  JSON.stringify(result3.rows)+"<br>"+
+                                        result4.rowCount + "\n" +  JSON.stringify(result4.rows)+"<br>"
+                                    );
+                                });
+                        });
+                });
         });
 });
 
