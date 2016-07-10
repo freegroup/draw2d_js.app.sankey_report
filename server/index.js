@@ -116,19 +116,19 @@ client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  d
 
 app.get('/backend/dump', function (req, res) {
     persistence.client.query('SELECT id from file ')
-        .on('error', function(error) {console.log(error);doneCallback();})
+        .on('error', function(error) {console.log(error);})
         .on("row",   function (row, result) {result.addRow(row);})
         .on("end",   function (result1) {
             persistence.client.query('SELECT id from json ')
-                .on('error', function(error) {console.log(error);doneCallback();})
+                .on('error', function(error) {console.log(error);d})
                 .on("row",   function (row, result) {result.addRow(row);})
                 .on("end",   function (result2) {
                     persistence.client.query('SELECT file from status ')
-                        .on('error', function(error) {console.log(error);doneCallback();})
+                        .on('error', function(error) {console.log(error);})
                         .on("row",   function (row, result) {result.addRow(row);})
                         .on("end",   function (result3) {
                             persistence.client.query('SELECT file from weight')
-                                .on('error', function(error) {console.log(error);doneCallback();})
+                                .on('error', function(error) {console.log(error);})
                                 .on("row",   function (row, result) {result.addRow(row);})
                                 .on("end",   function (result4) {
                                     res.send(
