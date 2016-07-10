@@ -123,11 +123,11 @@ app.get('/backend/dump', function (req, res) {
                 .on('error', function(error) {console.log(error);doneCallback();})
                 .on("row",   function (row, result) {result.addRow(row);})
                 .on("end",   function (result2) {
-                    persistence.client.query('SELECT id from status ')
+                    persistence.client.query('SELECT file from status ')
                         .on('error', function(error) {console.log(error);doneCallback();})
                         .on("row",   function (row, result) {result.addRow(row);})
                         .on("end",   function (result3) {
-                            persistence.client.query('SELECT id from weight')
+                            persistence.client.query('SELECT file from weight')
                                 .on('error', function(error) {console.log(error);doneCallback();})
                                 .on("row",   function (row, result) {result.addRow(row);})
                                 .on("end",   function (result4) {
