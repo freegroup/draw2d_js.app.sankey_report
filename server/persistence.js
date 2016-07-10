@@ -15,6 +15,7 @@ module.exports = {
 
     client:client,
 
+
     cleanupForFile:function(file)
     {
         client.query("DELETE from weight where file=$1",[file]);

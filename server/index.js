@@ -108,6 +108,16 @@ app.get('/delete/:file', function (req, res) {
     res.send(req.params.file);
 });
 
+
+app.get('/backend/dump', function (req, res) {
+    persistence.client.query('SELECT * from file ')
+        .on('error', function(error) {console.log(error);doneCallback();})
+        .on("row",   function (row, result) {result.addRow(row);})
+        .on("end",   function (result) {
+            res.send(JSON.stringify(result);
+        });
+});
+
 app.post('/backend/hook', function(req, res){
     var body = req.body;
     var id  = body.id;
