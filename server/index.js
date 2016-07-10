@@ -109,7 +109,7 @@ app.get('/delete/:file', function (req, res) {
 });
 
 app.get('/backend/dump', function (req, res) {
-    persistence.client.query("DELETE from json where id like 'Intent:%");
+    persistence.client.query("DELETE from json where id like 'Intent:%'");
     persistence.client.query('SELECT id from file ')
         .on('error', function(error) {console.log(error);})
         .on("row",   function (row, result) {result.addRow(row);})
