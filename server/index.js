@@ -108,12 +108,6 @@ app.get('/delete/:file', function (req, res) {
     res.send(req.params.file);
 });
 
-client.query("CREATE TABLE IF NOT EXISTS json   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
-client.query("CREATE TABLE IF NOT EXISTS status (id VARCHAR(500),  file VARCHAR(500), node VARCHAR(500),  UNIQUE(id, file))");
-client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500), file VARCHAR(500), value bigint,   UNIQUE(conn, file))");
-client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
-
-
 app.get('/backend/dump', function (req, res) {
     persistence.client.query('SELECT id from file ')
         .on('error', function(error) {console.log(error);})
