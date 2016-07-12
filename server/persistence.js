@@ -11,9 +11,9 @@ client.query("CREATE TABLE IF NOT EXISTS weight (conn VARCHAR(500), file VARCHAR
 client.query("CREATE TABLE IF NOT EXISTS file   (id VARCHAR(500) PRIMARY KEY,  doc TEXT)");
 
 
-client.query("ALTER TABLE json ADD COLUMN file VARCHAR(500);");
-client.query("UPDATE json set file='user.sankey'");
-client.query("ALTER TABLE json ALTER COLUMN file set NOT NULL");
+//client.query("ALTER TABLE json ADD COLUMN file VARCHAR(500);");
+//client.query("UPDATE json set file='user.sankey'");
+//client.query("ALTER TABLE json ALTER COLUMN file set NOT NULL");
 
 
 module.exports = {
