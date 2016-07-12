@@ -42,7 +42,7 @@ module.exports = {
 
     process: function(data) {
        queue.push(data);
-        if(queue.length>0){
+        if(queue.length===1){
             setTimeout(processEvent,0);
         }
     }
@@ -66,41 +66,12 @@ function processEvent(){
     };
     var data = queue.shift();
 
-    // Try to load an already stored JSON document from the Database
-    //
-    db.query("SELECT doc FROM json where id=$1", [data.jsonId])
-        .on('error', function(error) {console.log(error);})
-        .on("row", function (row, result) {result.addRow(row);})
-        .on("end", function(result){
-            var row = result.rows.length>0?result.rows[0]:undefined;
-            // INSERT the json into the DB for further processing
-            if(!row){
-                db.query("INSERT INTO  json values ($1, $2)",[ data.jsonId, JSON.stringify(data.json)])
-                    .on('error', function(error) {console.log(error);})
-                    .on("end", function(){
-                        var jsonDiff = diff( {}, data.json);
-                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                        processSankey(data, callback);
-                    });
-            }
-            // UPDATE them to make a DIFF
-            else{
-                db.query("UPDATE json set doc=$1 where id=$2", [JSON.stringify(data.json), data.jsonId])
-                    .on('error', function(error) {console.log(error);})
-                    .on("end", function(){
-                        var jsonDiff = diff( JSON.parse(row.doc), data.json);
-                        if(!jsonDiff){
-                            jsonDiff = [];
-                        }
-                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
-                        processSankey(data, callback);
-                    });
-            }
-        });
+    processFiles(data, callback);
 }
 
-function processSankey(data, eventCallback){
-    console.log("===processSankey");
+function processFiles(data, eventCallback){
+    console.log("===processFiles");
+
     // process all sankey diagrams and update the status of each connection
     //
     var filesToProcess = [];
@@ -127,7 +98,7 @@ function processSankey(data, eventCallback){
 function processFile(file, data, doneCallback)
 {
     data = $.extend({}, data, {file: file.id});
-    console.log("======================================= file:"+data.file);
+    console.log("======================================= processFile:"+data.file);
     // draw2d is loaded and you can now read some documents into a HeadlessCanvas
     //
     var diagram = JSON.parse(file.doc).content.diagram;
@@ -136,34 +107,68 @@ function processFile(file, data, doneCallback)
     reader.unmarshal(canvas, diagram);
     var figure = null;
 
-    // check if we have already a status for the given document and sankey report
-    //
-    db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
-        .on('error', function(error) {console.log(error);doneCallback();})
-        .on("row", function (row, result) {result.addRow(row);})
-        .on("end", function (result) {
-            // we have processed this JSON document with this sankey diagram once before
-            //
-            var record = result.rows.length>0?result.rows[0]:undefined;
-            if (record) {
-                figure = canvas.getFigure(record.node);
-                data = $.extend({}, data, {figure: figure});
-                processNode(data, doneCallback);
-            }
-            else {
-                figure = canvas.getFigures().find(function (figure) {
-                    return figure instanceof sankey.shape.Start;
-                });
-
-                // check if the "start" node match to the match conditions
+    var _process=function(data, callback){
+        // check if we have already a status for the given document and sankey report
+        //
+        db.query("SELECT node FROM status where id=$1 and file=$2",[data.jsonId, data.file])
+            .on('error', function(error) {console.log(error);callback();})
+            .on("row", function (row, result) {result.addRow(row);})
+            .on("end", function (result) {
+                // we have processed this JSON document with this sankey diagram once before
                 //
-                data = $.extend({}, data, {figure: figure});
-                if (matchNode(data)) {
-                    processNode(data, doneCallback);
+                var record = result.rows.length>0?result.rows[0]:undefined;
+                if (record) {
+                    figure = canvas.getFigure(record.node);
+                    data = $.extend({}, data, {figure: figure});
+                    processNode(data, callback);
                 }
                 else {
-                    doneCallback();
+                    figure = canvas.getFigures().find(function (figure) {
+                        return figure instanceof sankey.shape.Start;
+                    });
+
+                    // check if the "start" node match to the match conditions
+                    //
+                    data = $.extend({}, data, {figure: figure});
+                    if (matchNode(data)) {
+                        processNode(data, callback);
+                    }
+                    else {
+                        callback();
+                    }
                 }
+            });
+    };
+
+    // Try to load an already stored JSON document from the Database
+    //
+    db.query("SELECT doc FROM json where id=$1 and file=$2", [data.jsonId, data.file])
+        .on('error', function(error) {console.log(error);})
+        .on("row", function (row, result) {result.addRow(row);})
+        .on("end", function(result){
+            var row = result.rows.length>0?result.rows[0]:undefined;
+            // INSERT the json into the DB for further processing
+            if(!row){
+                db.query("INSERT INTO  json (id, doc, file) values ($1, $2, $3)",[ data.jsonId, JSON.stringify(data.json), data.file])
+                    .on('error', function(error) {console.log(error);})
+                    .on("end", function(){
+                        var jsonDiff = diff( {}, data.json);
+                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                        _process(data, doneCallback);
+                    });
+            }
+            // UPDATE them to make a DIFF
+            else{
+                db.query("UPDATE json set doc=$1 where id=$2 and file=$3", [JSON.stringify(data.json), data.jsonId, data.file])
+                    .on('error', function(error) {console.log(error);})
+                    .on("end", function(){
+                        var jsonDiff = diff( JSON.parse(row.doc), data.json);
+                        if(!jsonDiff){
+                            jsonDiff = [];
+                        }
+                        data.jsonDiff = jsonDiff.map(function(diff){ return diff.path.join(".");});
+                        _process(data, doneCallback);
+                    });
             }
         });
 }

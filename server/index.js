@@ -108,36 +108,6 @@ app.get('/delete/:file', function (req, res) {
     res.send(req.params.file);
 });
 
-app.get('/backend/dump', function (req, res) {
-    persistence.client.query("DELETE from json where id like 'Intent:%'");
-    persistence.client.query('SELECT id from file ')
-        .on('error', function(error) {console.log(error);})
-        .on("row",   function (row, result) {result.addRow(row);})
-        .on("end",   function (result1) {
-            persistence.client.query('SELECT id from json ')
-                .on('error', function(error) {console.log(error);d})
-                .on("row",   function (row, result) {result.addRow(row);})
-                .on("end",   function (result2) {
-                    persistence.client.query('SELECT file from status ')
-                        .on('error', function(error) {console.log(error);})
-                        .on("row",   function (row, result) {result.addRow(row);})
-                        .on("end",   function (result3) {
-                            persistence.client.query('SELECT file from weight')
-                                .on('error', function(error) {console.log(error);})
-                                .on("row",   function (row, result) {result.addRow(row);})
-                                .on("end",   function (result4) {
-                                    res.send(
-                                        result1.rowCount + "\n" +  JSON.stringify(result1.rows)+"<br>"+
-                                        result2.rowCount + "\n" +  JSON.stringify(result2.rows)+"<br>"+
-                                        result3.rowCount + "\n" +  JSON.stringify(result3.rows)+"<br>"+
-                                        result4.rowCount + "\n" +  JSON.stringify(result4.rows)+"<br>"
-                                    );
-                                });
-                        });
-                });
-        });
-});
-
 app.post('/backend/hook', function(req, res){
     var body = req.body;
     var id  = body.id;
