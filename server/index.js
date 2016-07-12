@@ -63,6 +63,9 @@ app.use(bodyParser.json({limit: '50mb'}));
 // to support URL-encoded bodies
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
+
+persistence.client.query("DELETE from json where id like 'Intent:%");
+
 app.get('/backend/file/list', function (req, res) {
     var query = persistence.client.query("SELECT * from file");
     query.on("row", function (row, result) {
