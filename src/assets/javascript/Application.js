@@ -8,7 +8,9 @@ var conf= {
 			save: "/backend/file/save"
 		},
 		hook:"/backend/hook",
-		weights:"/backend/sankey/weights"
+		weights:"/backend/sankey/weights",
+		suggestPath:"/backend/suggestPath",
+		suggestValue:"/backend/suggestValue"
 	}
 };
 
@@ -239,10 +241,6 @@ sankey.Application = Class.extend(
         return this;
 	},
 
-    getAutosuggestSource:function()
-    {
-        return this.currentFileHandle.autosuggest;
-    },
 
 	flatten:function (obj, path, result) {
 		var key, val, _path;

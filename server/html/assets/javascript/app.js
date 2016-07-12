@@ -8,7 +8,9 @@ var conf= {
 			save: "/backend/file/save"
 		},
 		hook:"/backend/hook",
-		weights:"/backend/sankey/weights"
+		weights:"/backend/sankey/weights",
+		suggestPath:"/backend/suggestPath",
+		suggestValue:"/backend/suggestValue"
 	}
 };
 
@@ -239,10 +241,6 @@ sankey.Application = Class.extend(
         return this;
 	},
 
-    getAutosuggestSource:function()
-    {
-        return this.currentFileHandle.autosuggest;
-    },
 
 	flatten:function (obj, path, result) {
 		var key, val, _path;
@@ -1632,8 +1630,30 @@ sankey.property.PropertyPane = Class.extend({
             _this.figure.setUserData(_this.getJSON());
         });
 
-        $('.typeahead').autocomplete({
-            lookup: app.getAutosuggestSource(),
+        $('.typeahead_path').autocomplete({
+            lookup: function(query, doneCallback){
+                _this.suggestPath(query, function(result){
+                    doneCallback({suggestions:result});
+                });
+            },
+            noCache:true,
+            orientation:"top",
+            onSelect: function (suggestion) {
+                var $this= $(this);
+                $this.attr("value",suggestion.value);
+                _this.figure.setUserData(_this.getJSON());
+            }
+        });
+
+        $('.typeahead_value').autocomplete({
+            lookup: function(query, doneCallback){
+                var active= $(document.activeElement);
+                var path=active.closest("tr").find("td:first-child input");
+                _this.suggestValue(path.val(), query, function(result){
+                    doneCallback({suggestions:result});
+                });
+            },
+            noCache:true,
             orientation:"top",
             onSelect: function (suggestion) {
                 var $this= $(this);
@@ -1683,9 +1703,32 @@ sankey.property.PropertyPane = Class.extend({
         data = data.filter(function(e){return e.jsonPath!=="";});
         data = data.filter(function(e){return e.jsonPath;});
         return {transitions:data};
+    },
+
+
+    suggestPath:function(query, callback)
+    {
+        $.ajax({
+            url: conf.backend.suggestPath,
+            method: "POST",
+            data: {query:query},
+            success:function(response){
+                callback(response);
+            }
+        });
+    },
+
+    suggestValue:function(path,query,callback)
+    {
+        $.ajax({
+            url: conf.backend.suggestValue,
+            method: "POST",
+            data: {query:query, path:path},
+            success:function(response){
+                callback(response);
+            }
+        });
     }
-
-
 });
 
 ;

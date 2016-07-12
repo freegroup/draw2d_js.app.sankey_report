@@ -31,6 +31,25 @@ module.exports = {
         io=socket;
     },
 
+    suggestPath: function(query, callback){
+       db.query("SELECT path from suggest_path where path like $1",["%"+query+"%"])
+            .on('error', function(error) {console.log(error);})
+            .on("row", function (row, result) {result.addRow(row);})
+            .on("end", function (result) {
+                callback(result.rows);
+                console.log(result.rows);
+            });
+    },
+
+    suggestValue: function(path,  query, callback){
+        db.query("SELECT value from suggest_value where path=$1 and value like $2",[path,"%"+query+"%"])
+            .on('error', function(error) {console.log(error);})
+            .on("row", function (row, result) {result.addRow(row);})
+            .on("end", function (result) {
+                callback(result.rows);
+            });
+    },
+
     weights: function(file, callback){
         db.query("SELECT conn, value, file from weight where file=$1",[file])
             .on('error', function(error) {console.log(error);})
@@ -67,10 +86,22 @@ function processEvent(){
     var data = queue.shift();
 
     processFiles(data, callback);
+    learnAutosuggest(data);
+}
+
+function learnAutosuggest(data){
+    var obj = flatten(data.json);
+    delete obj.OBJECT;
+    delete obj.EVENT;
+
+    Object.keys(obj).forEach(function(path){
+        db.query("INSERT INTO suggest_path ( path ) values ($1) ON CONFLICT DO NOTHING",[ path])
+        db.query("INSERT INTO suggest_value( path, value ) values ($1, $2) ON CONFLICT DO NOTHING",[ path, obj[path]])
+    });
 }
 
 function processFiles(data, eventCallback){
-    console.log("===processFiles");
+    console.log("=== processFiles");
 
     // process all sankey diagrams and update the status of each connection
     //
@@ -98,7 +129,7 @@ function processFiles(data, eventCallback){
 function processFile(file, data, doneCallback)
 {
     data = $.extend({}, data, {file: file.id});
-    console.log("======================================= processFile:"+data.file);
+    console.log("=== processFile:"+data.file);
     // draw2d is loaded and you can now read some documents into a HeadlessCanvas
     //
     var diagram = JSON.parse(file.doc).content.diagram;
@@ -173,8 +204,7 @@ function processFile(file, data, doneCallback)
         });
 }
 
-function processNode(data, doneCallback)
-{
+function processNode(data, doneCallback){
     console.log("==== processNode");
 
     if(data.figure===null){
@@ -231,7 +261,6 @@ function processNode(data, doneCallback)
                                         doneCallback();
                                     });
                                 });
-
                     });
             }
             else{
@@ -242,7 +271,7 @@ function processNode(data, doneCallback)
 
 function cleanupNode(data)
 {
-    console.log("=== cleanupNode "+data.file);
+    console.log("=== cleanupNode: ",data.file, data.jsonId);
     db.query("DELETE from status where id=$1 and file=$2", [ data.jsonId, data.file]);
 }
 
@@ -252,7 +281,7 @@ function matchNode(data)
         return false;
     }
 
-    console.log("=====matchNode:"+data.figure.NAME);
+    console.log("===== matchNode:"+data.figure.NAME);
     var transitions = $.extend({},{transitions:[]},data.figure.getUserData()).transitions;
     console.log("   all transitions:",transitions);
     transitions = transitions.filter(function(e){return e.jsonPath!=="";});
@@ -302,7 +331,7 @@ function matchNode(data)
                     matched = matched && (typeof currentValue === "undefined");
                     break;
                 default:
-                    console.log("unahandled switch/case value ["+operation+"]");
+                    console.log("unhandled switch/case value ["+operation+"]");
             }
         }catch(exc){
             console.log(exc);
@@ -334,22 +363,20 @@ function dump(){
                     console.log("Weight:");
                     db.query("SELECT * from weight")
                         .on('error', function(error) {console.log(error);})
-                        .on("row", function (row, result) {
-                            console.log("    ",row.conn, row.file, row.value);
-                        })
-                        .on("end", function (result) {
-
-                        });
+                        .on("row", function (row, result) {console.log("    ",row.conn, row.file, row.value);})
+                        .on("end", function (result) {});
                 });
         });
 }
 
 function attributeByPath(o, s)
 {
-    console.log("===attributeByPath");
+    console.log("=== attributeByPath");
 
-    if(!s)
+    if(!s) {
         return;
+    }
+
     s = s.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
     s = s.replace(/^\./, '');           // strip a leading dot
     var a = s.split('.');
@@ -362,4 +389,20 @@ function attributeByPath(o, s)
         }
     }
     return o;
+}
+
+function flatten (obj, path, result) {
+    var key, val, _path;
+    path = path || [];
+    result = result || {};
+    for (key in obj) {
+        val = obj[key];
+        _path = path.concat([key]);
+        if (val instanceof Object) {
+            flatten(val, _path, result);
+        } else {
+            result[_path.join('.')] = val;
+        }
+    }
+    return result;
 }

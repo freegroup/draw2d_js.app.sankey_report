@@ -171,7 +171,7 @@
         <tbody>
         {{#transitions}}
             <tr>
-                <td><input type="text"  value="{{jsonPath}}"  placeholder="JSON path" class="typeahead form-control"></td>
+                <td><input type="text"  value="{{jsonPath}}"  placeholder="JSON path" class="typeahead_path form-control"></td>
                 <td>
                     <select value="{{operation}}" class="form-control">
                         <option value="equals">is equal</option>
@@ -181,11 +181,11 @@
                         <option value="undefined">undefined</option>
                     </select>
                 </td>
-                <td><input type="text" value="{{value}}" class="form-control"></td>
+                <td><input type="text" value="{{value}}" class="typeahead_value form-control"></td>
             </tr>
         {{/transitions}}
         <tr>
-            <td><input type="text"  value=""  placeholder="JSON path" class="typeahead form-control"></td>
+            <td><input type="text"  value=""  placeholder="JSON path" class="typeahead_path form-control"></td>
             <td>
                 <select class="form-control" value="equals">
                     <option value="equals">is equal</option>
@@ -195,7 +195,7 @@
                     <option value="undefined">undefined</option>
                 </select>
             </td>
-            <td><input type="text" value="" class="form-control"></td>
+            <td><input type="text" value="" class="typeahead_value form-control"></td>
         </tr>
         </tbody>
     </table>
@@ -208,7 +208,7 @@
         <tbody>
         {{#transitions}}
         <tr>
-            <td><input value="{{jsonPath}}"  type="text" placeholder="JSON path" class="typeahead form-control"></td>
+            <td><input value="{{jsonPath}}"  type="text" placeholder="JSON path" class="typeahead_path form-control"></td>
             <td>
                 <select value="{{operation}}" class="form-control">
                     <option value="equals">is equal</option>
@@ -220,11 +220,11 @@
                     <option value="undefined">undefined</option>
                 </select>
             </td>
-            <td><input type="text" value="{{value}}" class="form-control"></td>
+            <td><input type="text" value="{{value}}" class="typeahead_value form-control"></td>
         </tr>
         {{/transitions}}
         <tr>
-            <td><input type="text" placeholder="JSON path" class="typeahead form-control"></td>
+            <td><input type="text" placeholder="JSON path" class="typeahead_path form-control"></td>
             <td>
                 <select class="form-control" value="equals">
                     <option value="equals">is equal</option>
@@ -236,7 +236,7 @@
                     <option value="undefined">undefined</option>
                 </select>
             </td>
-            <td><input type="text" value="" class="form-control"></td>
+            <td><input type="text" value="" class="typeahead_value form-control"></td>
         </tr>
         </tbody>
     </table>

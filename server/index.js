@@ -111,12 +111,34 @@ app.get('/delete/:file', function (req, res) {
     res.send(req.params.file);
 });
 
+app.post('/backend/suggestPath', function(req, res){
+    var body = req.body;
+    var query  = body.query;
+    sankey.suggestPath(query, function(records){
+        res.send(records.map(function(obj){return {value:obj.path};}));
+    });
+});
+
+app.post('/backend/suggestValue/', function(req, res){
+    var body  = req.body;
+    var path  = body.path;
+    var query = body.query;
+    sankey.suggestValue(path, query, function(records){
+        res.send(records.map(function(obj){return {value:obj.value};}));
+    });
+});
+
 app.post('/backend/hook', function(req, res){
     var body = req.body;
     var id  = body.id;
-    var json = body.content;
-    json.EVENT = body.event;
-    json.OBJECT= body.object;
+    var json = {
+        EVENT : body.event,  // deprecated
+        OBJECT: body.object, // deprecated
+
+        event  : body.event,
+        type   : body.object,
+        object : body.content
+    };
     console.log(json);
     sankey.process({jsonId:body.object+":"+id,json:json});
     res.send('true');
