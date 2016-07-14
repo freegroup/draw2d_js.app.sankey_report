@@ -7,6 +7,7 @@ module.exports = function (grunt) {
         // this way we can use things like name and version (pkg.name)
         pkg: grunt.file.readJSON('package.json'),
 
+        clean: ['dist/', 'server/'],
         // Task configuration
         concat: {
             options: {
@@ -31,50 +32,47 @@ module.exports = function (grunt) {
                     './bower_components/hogan/web/1.0.0/hogan.min.js',
                     './bower_components/devbridge-autocomplete/dist/jquery.autocomplete.min.js'
                 ],
-                dest: './dist/assets/javascript/dependencies.js'
+                dest: './server/html/editor/assets/javascript/dependencies.js'
             },
             application: {
                 src: [
-                    './src/assets/javascript/**/*.js'
+                    './src/server/html/assets/javascript/**/*.js'
                 ],
-                dest: './dist/assets/javascript/app.js'
+                dest: './server/html/editor/assets/javascript/app.js'
             }
         },
 
         copy: {
             application: {
                 expand: true,
-                cwd: 'src/',
+                cwd: 'src/editor/',
                 src: '**/*.html',
-                dest: 'dist/'
+                dest: 'server/html/editor/'
             },
             ionicons:{
                 expand: true,
                 cwd: 'bower_components/Ionicons/',
                 src: ['./css/*', "./fonts/*"],
-                dest: './dist/lib/ionicons'
+                dest: './server/html/editor/lib/ionicons'
             },
             img: {
                 expand: true,
-                cwd: 'src/assets/img',
+                cwd: 'src/editor/assets/img',
                 src: '*.*',
-                dest: 'dist/assets/img'
+                dest: './server/html/editor/assets/img'
             },
             bootstrap:{
                 expand: true,
                 cwd: 'bower_components/bootstrap/dist/',
                 src: ['**/*'],
-                dest: './dist/lib/bootstrap'
+                dest: './server/html/editor/lib/bootstrap'
             },
-            // copies the build result from the "dist" directory to the server subdirectory
-            // for "npm publish"
-            server:{
+            serverjs:{
                 expand: true,
-                cwd: 'dist/',
-                src: ['**/*'],
-                dest: 'server/html'
+                cwd: 'src/server/',
+                src: ['**/*.js'],
+                dest: './server/'
             }
-
         },
 
         less: {
@@ -83,7 +81,7 @@ module.exports = function (grunt) {
                     compress: false
                 },
                 files: {
-                    "./dist/assets/css/main.css": "./src/assets/less/*.less"
+                    "./server/html/editor/assets/css/main.css": "./src/editor/assets/less/*.less"
                 }
             }
         },
@@ -95,7 +93,7 @@ module.exports = function (grunt) {
             },
 
             // when this task is run, lint the Gruntfile and all js files in src
-            build: ['Grunfile.js', 'src/**/*.js']
+            build: ['Grunfile.js', 'src/editor/**/*.js']
         },
 
         watch: {
@@ -105,12 +103,6 @@ module.exports = function (grunt) {
                 ],
                 tasks: ['default']
             }
-        },
-        'gh-pages': {
-            options: {
-                base: 'dist'
-            },
-            src: ['**']
         }
     });
 
@@ -121,16 +113,16 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-gh-pages');
+    grunt.loadNpmTasks('grunt-contrib-rename');
+    grunt.loadNpmTasks('grunt-contrib-clean');
 
     // Task definition
     grunt.registerTask('default', [
+        'clean',
         'jshint',
         'concat',
         'less',
-        'copy:application','copy:img','copy:bootstrap' , 'copy:ionicons',
-        'copy:server'
-    ]);
-
-    grunt.registerTask('publish', ['default', 'gh-pages']);
+        'copy:application','copy:img','copy:bootstrap' , 'copy:ionicons', 'copy:serverjs'
+     ]);
 };
 

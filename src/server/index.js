@@ -57,16 +57,13 @@ var port = process.env.PORT || 6800;
 // HTTP server. good enough for an private raspi access
 //
 app.use("/editor", [auth, express.static(__dirname+'/html/editor')]);
-app.use("/viewer", [      express.static(__dirname+'/html/viewer')]);
-app.use("/"      , [      express.static(__dirname+'/html/index')]);
+app.use("/"      , [      express.static(__dirname+'/html/landingpage')]);
 
 // to support JSON-encoded bodies
 app.use(bodyParser.json({limit: '50mb'}));
 // to support URL-encoded bodies
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
-
-persistence.client.query("DELETE from json where id like 'Intent:%'");
 
 app.get('/backend/file/list', function (req, res) {
     var query = persistence.client.query("SELECT * from file");

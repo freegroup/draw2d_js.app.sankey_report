@@ -1,0 +1,244 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <title></title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <link href="./lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="./lib/ionicons/css/ionicons.min.css" />
+    <link rel="stylesheet" href="./assets/css/main.css" >
+
+    <SCRIPT src="./assets/javascript/dependencies.js"></SCRIPT>
+    <SCRIPT src="./lib/bootstrap/js/bootstrap.min.js"></SCRIPT>
+    <SCRIPT src="./assets/javascript/app.js"></SCRIPT>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+
+        var app,
+            socket;
+
+        $(window).load(function () {
+            socket = io();
+            app  = new sankey.Application(socket);
+        });
+
+    </script>
+
+    </head>
+
+<body id="container">
+
+<div id="content">
+    <div id="editor">
+        <div id="palette">
+            <img src="assets/img/palette_start.png"  data-shape="sankey.shape.Start"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/palette_pipe.png"   data-shape="sankey.shape.State"   class="palette_node_element draw2d_droppable">
+            <img src="assets/img/palette_end.png"    data-shape="sankey.shape.End"     class="palette_node_element draw2d_droppable">
+        </div>
+        <div id="view">
+            <div id="draw2dCanvasWrapper">
+                <div id="canvas"  style="width:9000px; height:9000px;-webkit-tap-highlight-color: rgba(0,0,0,0); "></div>
+                <div id='templateConfigurationMenu' class='ion-ios-gear-outline'></div>
+            </div>
+            <div id="property">
+            </div>
+        </div>
+    </div>
+</div>
+<div id="toolbar">
+    <img id="logo" src="assets/img/logo.png">
+    <div id="title">Sankey</div>
+    <div id="title2">state diagram</div>
+</div>
+
+
+
+<!--
+  # Save Dialog
+  #
+  #
+-->
+<div id="githubSaveFileDialog" class="modal fade githubFileDialog" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">Save your circuit</h4>
+            </div>
+            <div class="modal-body">
+                <div class="media">
+                    <div class="media-left media-middle">
+                        <a href="#">
+                            <div class="media-object githubFilePreview ion-ios-upload-outline" ></div>
+                        </a>
+                    </div>
+                    <div class="media-body">
+
+
+                        <br>
+                        <br>
+                        <fieldset>
+                            <div class="form-group">
+                                <div class="col-lg-12">
+                                    <input type="text"
+                                           class="form-control floating-label githubFileName"
+                                           value=""
+                                            >
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="row"></div>
+
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Abort</button>
+                <button class="btn btn-primary okButton"><span>Save</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--
+  #  File select/open dialog
+  #
+  -->
+<div id="githubFileSelectDialog" class="modal fade githubFileDialog" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">File Open...</h4>
+            </div>
+            <div class="modal-body">
+
+
+                <div class="list-group githubNavigation">
+                    <!-- FileList here -->
+                </div>
+
+
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Abort</button>
+                <button class="btn btn-primary okButton"><span>Open</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--
+  #  JSON Template dialog.
+  #  Required for autosuggest in the property screen of transistions
+  #
+  -->
+<div id="jsonTemplateDialog" class="modal fade" tabindex="-1">
+    <div class="modal-dialog ">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="media-heading">Past example JSON for autosuggest suport.</h4>
+            </div>
+            <div class="modal-body">
+                <div id="templateEditor">
+{
+}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary okButton"><span>Ok</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id="figureConfigDialog">
+    <div class="figureAddLabel configMenuEntry"><span class="ion-ios-pricetag-outline"></span> Add label</div>
+    <div class="figureSetColor configMenuEntry"><span class="ion-android-color-palette"></span> Color</div>
+</div>
+
+
+<script id="template_startNode" type="hogan/template">
+    <table class="table" id="transitions">
+        <thead><tr><th data-path="jsonPath">JSON Path</th><th data-path="operation">Operation</th><th data-path="value">Value</th></tr></thead>
+        <tbody>
+        {{#transitions}}
+            <tr>
+                <td><input type="text"  value="{{jsonPath}}"  placeholder="JSON path" class="typeahead_path form-control"></td>
+                <td>
+                    <select value="{{operation}}" class="form-control">
+                        <option value="equals">is equal</option>
+                        <option value="!equals">not equal</option>
+                        <option value="null">is null</option>
+                        <option value="!null">not null</option>
+                        <option value="undefined">undefined</option>
+                    </select>
+                </td>
+                <td><input type="text" value="{{value}}" class="typeahead_value form-control"></td>
+            </tr>
+        {{/transitions}}
+        <tr>
+            <td><input type="text"  value=""  placeholder="JSON path" class="typeahead_path form-control"></td>
+            <td>
+                <select class="form-control" value="equals">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="" class="typeahead_value form-control"></td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+
+
+<script id="template_connection" type="hogan/template">
+    <table class="table" id="transitions">
+        <thead><tr><th data-path="jsonPath">JSON Path</th><th data-path="operation">Operation</th><th data-path="value">Value</th></tr></thead>
+        <tbody>
+        {{#transitions}}
+        <tr>
+            <td><input value="{{jsonPath}}"  type="text" placeholder="JSON path" class="typeahead_path form-control"></td>
+            <td>
+                <select value="{{operation}}" class="form-control">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="changed">has changed</option>
+                    <option value="!changed">not changed</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="{{value}}" class="typeahead_value form-control"></td>
+        </tr>
+        {{/transitions}}
+        <tr>
+            <td><input type="text" placeholder="JSON path" class="typeahead_path form-control"></td>
+            <td>
+                <select class="form-control" value="equals">
+                    <option value="equals">is equal</option>
+                    <option value="!equals">not equal</option>
+                    <option value="null">is null</option>
+                    <option value="!null">not null</option>
+                    <option value="changed">has changed</option>
+                    <option value="!changed">not changed</option>
+                    <option value="undefined">undefined</option>
+                </select>
+            </td>
+            <td><input type="text" value="" class="typeahead_value form-control"></td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+</body>
+
+</html>
