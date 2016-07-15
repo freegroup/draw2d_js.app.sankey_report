@@ -72,6 +72,12 @@ module.exports = function (grunt) {
                 cwd: 'src/server/',
                 src: ['**/*.js'],
                 dest: './server/'
+            },
+            ghpages:{
+                expand: true,
+                cwd: 'src/gh-pages/',
+                src: ['**/*'],
+                dest: './dist/'
             }
         },
 
@@ -103,6 +109,12 @@ module.exports = function (grunt) {
                 ],
                 tasks: ['default']
             }
+        },
+        'gh-pages': {
+            options: {
+                base: 'dist'
+            },
+            src: ['**']
         }
     });
 
@@ -124,5 +136,8 @@ module.exports = function (grunt) {
         'less',
         'copy:application','copy:img','copy:bootstrap' , 'copy:ionicons', 'copy:serverjs'
      ]);
+
+    grunt.registerTask('publish', [ 'copy:ghpages','gh-pages']);
+
 };
 
