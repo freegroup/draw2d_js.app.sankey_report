@@ -41,7 +41,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand brand page-scroll" href="#page-top">Sankey <i>state</i></a>
+                <a class="navbar-brand brand page-scroll highlight" href="#page-top"><img src="logo.png">Sankey <i>state</i></a>
             </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->
@@ -58,13 +58,14 @@
                         <a class="page-scroll" href="#usecase">Use Cases</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#services">Services</a>
+                        <a class="page-scroll" href="#integrate">Integrate</a>
                     </li>
                     <li>
-                        <a class="page-scroll" href="#contact">Contact</a>
+                        <a class="page-scroll" href="#example">Example</a>
                     </li>
                 </ul>
             </div>
+            <div class="headline">Transaction Mining - The Basics for Marketing Managers</div>
             <!-- /.navbar-collapse -->
         </div>
         <!-- /.container -->
@@ -76,7 +77,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <h1>Understand the connections in your data</h1>
-                    <p><strong class="brand">Sankey <i>state</i></strong> helps to understand and visualize your transaction data through a simple web-based interface.</p>
+                    <p><strong class="highlight">Sankey <i>state</i></strong> helps to understand and visualize your transaction data through a simple web-based interface.</p>
                     <img src="teaser.png">
                 </div>
             </div>
@@ -90,15 +91,16 @@
                 <div class="col-lg-12">
                     <div class="title">About</div>
                     <div class="slogan">Sankey Diagram - A Powerful Chart Type</div>
+                    <img src="sankey_diagram.png">
                     <div class="content">
                     Sankey Diagram is used to visualize the magnitude of flow between
-                    states in ordered analysis.
+                    states in ordered analysis.Traditionally used  to visualize the flow of
+                    energy or materials in  various networks and processes.
                     </div>
+                    <br>
                     <div class="content">
-                   Traditionally used  to visualize the flow of
-                    energy or materials in  various
-                    networks and processes. They
-                    illustrate quantitative information about flows, their relationships,
+                     <b class="highlight">They
+                    illustrate quantitative information about flows</b>, their relationships,
                     and their transformation. Sankey diagrams represent  directed,
                     weighted graphs with weight functions that satisfy flow
                     conservation: the sum of the incoming weights for  each node is
@@ -116,38 +118,152 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="title">Use Cases</div>
-                    <div class="slogan">Analyzing Related Sequences of Logs</div>
-                    <ul class="facts">
-                        <li>Phone registration failures over specific period</li>
-                        <li>Tracking transaction payment processing platform</li>
-                        <li>Tracking a renewal or new signup transaction</li>
-                        <li>E-Commerce: typical user session, anomalous checkout transactions, catching drop off in checkout</li>
-                        <li>Tracking users on-boarding process</li>
-                        <li>Attribution modeling - Determining the origin of a user action</li>
-
-                    </ul>
+                    <div class="slogan">Learn how people use your app with your customized sankey diagrams</div>
+                    <div  class="content">
+                        Understanding what your users are doing doesn’t have to be a complicated setup process.
+                        Once you install the Sankey NodeJS server, you can pick and choose which actions to
+                        track in your app.
+                    </div>
+                    <div  class="content">
+                        Have you ever wanted to know if people used the comment feature or
+                        tapped that button in your app? Just point and click to choose the interactions you
+                        want to measure. Now you can spend more time learning how to make your app better.
+                    </div>
+                    <br>
+                    <div  class="content">
+                        <ul class="facts">
+                            <li>Phone registration failures over specific period</li>
+                            <li>Tracking transaction payment processing platform</li>
+                            <li>Tracking a renewal or new signup transaction</li>
+                            <li>E-Commerce: typical user session, anomalous checkout transactions, catching drop off in checkout</li>
+                            <li>Tracking users on-boarding process</li>
+                            <li>Attribution modeling - Determining the origin of a user action</li>
+                        </ul>
+                    </div>
+                    <div class="slogan highlight">Learn something surprising about your users</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Services Section -->
-    <section id="services" class="section">
+    <section id="integrate" class="section">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1>Services Section</h1>
+                    <div class="title">Use <a target="_blank" href="https://en.wikipedia.org/wiki/Webhook">webhooks</a> to integrate data events</div>
+                    <div class="slogan">Integrate any app or server via webhooks in less than 5 minutes</div>
+                    <img src="webhook.png">
+                    <div  class="content">
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Contact Section -->
-    <section id="contact" class="section">
+    <section id="example" class="section">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1>Contact Section</h1>
+                    <div class="title">Getting started example</div>
+                    <div class="slogan">Track the success of your registration process</div>
+                    <div  class="content">
+                        We want monitor the simple user registration process shown below as an getting started example.
+                    </div>
+                    <img src="example.png">
+                    <div class="content">
+                        <h2>1.) Requirements</h2>
+                        In order to run the <span class="brand highlight">Sankey <i>state</i></span> server your need NodeJS and a running postgres DB.
+
+                        <h2>2.) Installing Sankey state</h2>
+                        <div  class="content">
+                            Just install the server with the NodeJS package manager or go to <a href="https://github.com/freegroup/draw2d_js.app.sankey_report" target="_blank">Github</a>
+                            if you want to build it by your own via grunt.
+                            <pre class="bash">npm install sankey-state</pre>
+
+                        </div>
+
+                        <h2>3.) Set the enviroment variable for the PostgresDB</h2>
+                        <div  class="content">
+                            The sankey server uses Postgres for the persistence. You must configure the connection string
+                            with an enviroment variable.
+                            <pre class="bash">export DATABASE_URL=postgres://postgres:@localhost:5432/sankey</pre>
+                        </div>
+
+                        <h2>4.) Start the <span class="brand highlight">Sankey <i>state</i></span> server</h2>
+                        <div  class="content">
+                            Now you can stat the server and if everything is fine it reports the URL where you can reach
+                            the administration UI.
+                            <pre class="bash">
+>sankey-state [enter]
+Serve directory "/Users/freegroup/draw2d_js.app.sankey_report/server"
+Admin UI: on http://10.87.155.238:6800/editor
+WebHook URL: on http://10.87.155.238:6800/backend/hook                     </pre>
+                        </div>
+
+                        <h2>5.) Plump your diagram</h2>
+                        <div  class="content">
+                            Open the adminstration UI and create the example diagram shown below. Just play the video
+                            to see how to plump the diagram.  <span class="highlight">Don't forget to save your diagram if you are done.</span>
+                        </div>
+
+                        <br>
+                        <img data-gifffer="register_example.gif" width="900">
+
+                        <h2>6.) POST some JSON to the WebHook URL</h2>
+                        <div  class="content">
+                           Post the JSON sequence below and you can see in realtime the increment of the
+                           connection weights.
+                        </div>
+<br>
+Send this JSON if a user has registed in your App
+                        <pre class="json">
+{
+   "id" : 42
+   "event":"user:create",
+   "type":"User",
+   "content":{
+       "name": "John Doe",
+       "email": "john@doe.com"
+   }
+}
+                        </pre>
+<br>
+Send this from your App if the User has verified the eMail address
+                        <pre class="json">
+{
+   "id" : 42
+   "event":"user:verified",
+   "type":"User",
+   "content":{
+       "name": "John Doe",
+       "email": "john@doe.com"
+   }
+}
+                        </pre>
+<br>
+Send this JSON if the user (or the system) has deleted the account
+                        <pre class="json">
+{
+   "id" : 42
+   "event":"user:deleted",
+   "type":"User",
+   "content":{
+       "name": "John Doe",
+       "email": "john@doe.com"
+   }
+}
+                        </pre>
+
+                        Now you has send the events to the WebHook and the diagram reflects the flow of one user registration.
+
+                    </div>
+
+                    <div  class="content">
+
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -156,12 +272,16 @@
     <!-- jQuery -->
     <script src="js/jquery.js"></script>
 
+    <script src="js/gifffer.js"></script>
+
     <!-- Bootstrap Core JavaScript -->
     <script src="js/bootstrap.min.js"></script>
 
     <!-- Scrolling Nav JavaScript -->
     <script src="js/jquery.easing.min.js"></script>
     <script src="js/scrolling-nav.js"></script>
+
+    <script src="js/highlight.js"></script>
 
 </body>
 

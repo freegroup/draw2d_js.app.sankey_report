@@ -144,6 +144,7 @@ app.post('/backend/hook', function(req, res){
 });
 
 http.listen(port, function(){
-    console.log('serve directory "'+__dirname+'"');
-    console.log('listening on http://'+address+':'+port+'/');
+    console.log('Serve directory "'+__dirname+'"');
+    console.log('Admin UI: on http://'+address+':'+port+'/editor');
+    console.log('WebHook URL: on http://'+address+':'+port+'/backend/hook');
 });
