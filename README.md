@@ -1,6 +1,8 @@
 # Understand the connections in your data
 Sankey state helps to understand and visualize your transaction data through a simple web-based interface.
 
+![alt tag](https://raw.githubusercontent.com/freegroup/draw2d_js.app.sankey_report/blob/master/src/gh-pages/teaser.png)
+
 
 ## Use Cases
 Learn how people use your app with your customized sankey diagrams
@@ -14,6 +16,7 @@ Have you ever wanted to know if people used the comment feature or tapped that b
  - Tracking users on-boarding process
  - Attribution modeling - Determining the origin of a user action
  - Learn something surprising about your users
+
 
 
 got to http://freegroup.github.io/draw2d_js.app.sankey_report/ to read more
