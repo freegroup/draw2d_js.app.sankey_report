@@ -45,7 +45,7 @@ sankey.Toolbar = Class.extend({
 		this.html.append(this.undoButton);
 		this.undoButton.button().click($.proxy(function(){
 		       this.view.getCommandStack().undo();
-		},this)).button( "option", "disabled", true );
+		},this)).prop( "disabled", true );
 
 		// Inject the REDO Button and the callback
 		//
@@ -53,7 +53,7 @@ sankey.Toolbar = Class.extend({
 		this.html.append(this.redoButton);
 		this.redoButton.button().click($.proxy(function(){
 		    this.view.getCommandStack().redo();
-		},this)).button( "option", "disabled", true );
+		},this)).prop("disabled", true );
 
 		// Inject the DELETE Button
 		//
@@ -63,7 +63,17 @@ sankey.Toolbar = Class.extend({
 			var node = this.view.getPrimarySelection();
 			var command= new draw2d.command.CommandDelete(node);
 			this.view.getCommandStack().execute(command);
-		},this)).button( "option", "disabled", true );
+		},this)).prop( "disabled", true );
+
+
+		// Inject the DELETE Button
+		//
+		this.shareButton  = $("<button class='ion-android-share-alt icon'></button>");
+		this.html.append(this.shareButton);
+		this.shareButton.button().click($.proxy(function(){
+			new sankey.dialog.FileShare().show();
+		},this));
+
 	},
 
 	/**
@@ -76,7 +86,7 @@ sankey.Toolbar = Class.extend({
      * @param {draw2d.Figure} event.figure
 	 */
 	onSelectionChanged : function(emitter, event){
-		this.deleteButton.button( "option", "disabled", event.figure===null );
+		this.deleteButton.prop("disabled", event.figure===null );
 	},
 	
 	/**
@@ -90,7 +100,7 @@ sankey.Toolbar = Class.extend({
 	 **/
 	stackChanged:function(event)
 	{
-		this.undoButton.button( "option", "disabled", !event.getStack().canUndo() );
-		this.redoButton.button( "option", "disabled", !event.getStack().canRedo() );
+		this.undoButton.prop("disabled", !event.getStack().canUndo() );
+		this.redoButton.prop("disabled", !event.getStack().canRedo() );
 	}
 });

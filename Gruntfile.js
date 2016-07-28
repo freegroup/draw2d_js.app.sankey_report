@@ -17,7 +17,7 @@ module.exports = function (grunt) {
                 src: [
                     './bower_components/shifty/dist/shifty.min.js',
                     './bower_components/draw2d/dist/patched_raphael.js',
-                    './bower_components/jquery/dist/jquery.min.js',
+                    './bower_components/jquery/jquery.min.js',
                     './bower_components/jquery-ui/jquery-ui.min.js',
                     './bower_components/jquery-ui-layout/source/stable/jquery.layout.min.js',
                     './bower_components/draw2d/dist/jquery.autoresize.js',
@@ -32,18 +32,36 @@ module.exports = function (grunt) {
                     './bower_components/hogan/web/1.0.0/hogan.min.js',
                     './bower_components/devbridge-autocomplete/dist/jquery.autocomplete.min.js'
                 ],
-                dest: './server/html/editor/assets/javascript/dependencies.js'
+                dest: './server/html/common/assets/javascript/dependencies.js'
             },
-            application: {
+            common: {
                 src: [
-                    './src/server/html/assets/javascript/**/*.js'
+                   './src/common/assets/javascript/index.js', './src/common/assets/javascript/**/*.js'
                 ],
-                dest: './server/html/editor/assets/javascript/app.js'
+                dest: './server/html/common/assets/javascript/common.js'
+            },
+            viewer: {
+                src: [
+                    './src/viewer/assets/javascript/**/*.js'
+                ],
+                dest: './server/html/viewer/assets/javascript/viewer.js'
+            },
+            editor: {
+                src: [
+                    './src/editor/assets/javascript/**/*.js'
+                ],
+                dest: './server/html/editor/assets/javascript/editor.js'
             }
         },
 
         copy: {
-            application: {
+            viewer: {
+                expand: true,
+                cwd: 'src/viewer/',
+                src: '**/*.html',
+                dest: 'server/html/viewer/'
+            },
+            editor: {
                 expand: true,
                 cwd: 'src/editor/',
                 src: '**/*.html',
@@ -53,19 +71,25 @@ module.exports = function (grunt) {
                 expand: true,
                 cwd: 'bower_components/Ionicons/',
                 src: ['./css/*', "./fonts/*"],
-                dest: './server/html/editor/lib/ionicons'
+                dest: './server/html/common/lib/ionicons'
             },
-            img: {
+            editor_img: {
                 expand: true,
                 cwd: 'src/editor/assets/img',
                 src: '*.*',
                 dest: './server/html/editor/assets/img'
             },
+            common_img: {
+                expand: true,
+                cwd: 'src/common/assets/img',
+                src: '*.*',
+                dest: './server/html/common/assets/img'
+            },
             bootstrap:{
                 expand: true,
                 cwd: 'bower_components/bootstrap/dist/',
                 src: ['**/*'],
-                dest: './server/html/editor/lib/bootstrap'
+                dest: './server/html/common/lib/bootstrap'
             },
             serverjs:{
                 expand: true,
@@ -82,12 +106,20 @@ module.exports = function (grunt) {
         },
 
         less: {
-            development: {
+            editor: {
                 options: {
                     compress: false
                 },
                 files: {
                     "./server/html/editor/assets/css/main.css": "./src/editor/assets/less/*.less"
+                }
+            },
+            viewer: {
+                options: {
+                    compress: false
+                },
+                files: {
+                    "./server/html/viewer/assets/css/main.css": "./src/viewer/assets/less/*.less"
                 }
             }
         },
@@ -134,7 +166,7 @@ module.exports = function (grunt) {
         'jshint',
         'concat',
         'less',
-        'copy:application','copy:img','copy:bootstrap' , 'copy:ionicons', 'copy:serverjs'
+        'copy:editor','copy:viewer','copy:editor_img','copy:common_img','copy:bootstrap' , 'copy:ionicons', 'copy:serverjs'
      ]);
 
     grunt.registerTask('publish', [ 'copy:ghpages','gh-pages']);

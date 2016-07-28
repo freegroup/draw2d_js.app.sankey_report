@@ -21,7 +21,7 @@ env("<html></html>", function (errors, window) {
 
     vm.runInThisContext(fs.readFileSync(__dirname + "/lib/patched_Class.js"));
     vm.runInThisContext(fs.readFileSync(__dirname + "/lib/draw2d.js"));
-    vm.runInThisContext(fs.readFileSync(__dirname + "/html/editor/assets/javascript/app.js"));
+    vm.runInThisContext(fs.readFileSync(__dirname + "/html/editor/assets/javascript/editor.js"));
 });
 
 var db = persistence.client;

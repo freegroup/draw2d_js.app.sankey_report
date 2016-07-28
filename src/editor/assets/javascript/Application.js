@@ -14,20 +14,6 @@ var conf= {
 	}
 };
 
-var sankey ={
-	shape:{
-	},
-	property:{
-	},
-	dialog:{
-	},
-	policy:{
-	},
-	anchor:{
-	},
-    locator:{
-    }
-};
 
 /**
  * 
@@ -129,10 +115,6 @@ sankey.Application = Class.extend(
 		});
 
 		this.view.centerDocument();
-
-		$("#templateConfigurationMenu").on("click",function(){
-			new sankey.dialog.JSONTemplate().show();
-		});
 	},
 
 	getParam: function( name )

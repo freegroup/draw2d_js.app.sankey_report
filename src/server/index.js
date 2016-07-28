@@ -56,7 +56,9 @@ var port = process.env.PORT || 6800;
 // provide the DigitalTrainingStudio WebApp with this very simple
 // HTTP server. good enough for an private raspi access
 //
+app.use("/common", [auth, express.static(__dirname+'/html/common')]);
 app.use("/editor", [auth, express.static(__dirname+'/html/editor')]);
+app.use("/viewer", [auth, express.static(__dirname+'/html/viewer')]);
 app.use("/"      , [      express.static(__dirname+'/html/landingpage')]);
 
 // to support JSON-encoded bodies
