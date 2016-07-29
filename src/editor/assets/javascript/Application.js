@@ -1,19 +1,3 @@
-var conf= {
-	fileSuffix: ".sankey",
-
-	backend: {
-		file: {
-			list: "/backend/file/list",
-			get : "/backend/file/get",
-			save: "/backend/file/save"
-		},
-		hook:"/backend/hook",
-		weights:"/backend/sankey/weights",
-		suggestPath:"/backend/suggestPath",
-		suggestValue:"/backend/suggestValue"
-	}
-};
-
 
 /**
  * 
@@ -29,6 +13,7 @@ sankey.Application = Class.extend(
      */
     init : function()
     {
+		var _this =  this;
 		this.localStorage = [];
 		try {
 			if( 'localStorage' in window && window.localStorage !== null){
@@ -39,8 +24,7 @@ sankey.Application = Class.extend(
 		}
 
 		this.currentFileHandle= {
-			title: "Untitled"+conf.fileSuffix,
-            jsonTemplate: {}
+			title: "Untitled"+conf.fileSuffix
 		};
 
         this.view         = new sankey.View("canvas");
@@ -55,7 +39,7 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:0,
 				spacing_closed:0,
-				size:80,
+				size:120,
 				paneSelector: "#toolbar"
 			},
 			center: {
@@ -83,7 +67,7 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:0,
 				spacing_closed:0,
-				size:60,
+				size:120,
 				paneSelector: "#palette"
 			},
 			center: {
@@ -114,37 +98,17 @@ sankey.Application = Class.extend(
 			}
 		});
 
-		this.view.centerDocument();
-	},
-
-	getParam: function( name )
-	{
-		name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-		var regexS = "[\\?&]"+name+"=([^&#]*)";
-		var regex = new RegExp( regexS );
-		var results = regex.exec( window.location.href );
-
-		// the param isn'T part of the normal URL pattern...
-		//
-		if( results === null ) {
-			// maybe it is part in the hash.
-			//
-			regexS = "[\\#]"+name+"=([^&#]*)";
-			regex = new RegExp( regexS );
-			results = regex.exec( window.location.hash );
-			if( results === null ) {
-				return null;
-			}
+		var diagram = this.getParam("diagram");
+		if(diagram){
+			this.fileOpen(diagram);
 		}
-
-		return results[1];
+		this.view.centerDocument();
 	},
 
 	fileNew: function(shapeTemplate)
 	{
 		this.currentFileHandle = {
-			title: "Untitled"+conf.fileSuffix,
-            jsonTemplate: {}
+			title: "Untitled"+conf.fileSuffix
 		};
 		this.view.clear();
 		if(shapeTemplate){
@@ -175,27 +139,51 @@ sankey.Application = Class.extend(
 	},
 
 
-	fileOpen: function()
+	fileOpen: function(name)
 	{
-		new sankey.dialog.FileOpen(this.currentFileHandle).show(
-			// success callback
-			$.proxy(function(json){
-				try{
-					this.view.clear();
-					var reader = new draw2d.io.json.Reader();
-					reader.unmarshal(this.view, json.content.diagram);
-                    this.setTemplate(json.content.jsonTemplate);
-					this.view.getCommandStack().markSaveLocation();
-					this.view.centerDocument();
-					this.view.diagramName=this.currentFileHandle.title;
-					this.updateWeights();
-				}
-				catch(e){
-					console.log(e);
-					this.view.clear();
-				}
-		    },this)
-        );
+        var _this = this;
+        var _open = function(fileName){
+                $.ajax({
+                        url: conf.backend.file.get,
+                        method: "POST",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        data:{
+                            id:fileName
+                        }
+                    }
+                ).done(function(response){
+                        try{
+                            _this.view.clear();
+                            var reader = new draw2d.io.json.Reader();
+                            reader.unmarshal(_this.view, response.content.diagram);
+                            _this.view.getCommandStack().markSaveLocation();
+                            _this.view.centerDocument();
+                            _this.updateWeights();
+                            window.location.hash = "diagram="+fileName;
+                            _this.currentFileHandle.title=fileName;
+                        }
+                        catch(e){
+                            console.log(e);
+                            _this.view.clear();
+                        }
+                    }
+                );
+
+            };
+
+        if(name){
+            _open(name);
+        }
+        else {
+            new sankey.dialog.FileSelect().show(_open);
+        }
+	},
+
+	fileShare:function()
+	{
+		new sankey.dialog.FileShare(this.currentFileHandle).show();
 	},
 
 	updateWeights:function()
@@ -224,7 +212,8 @@ sankey.Application = Class.extend(
 	},
 
 
-	flatten:function (obj, path, result) {
+	flatten:function (obj, path, result)
+    {
 		var key, val, _path;
 		path = path || [];
 		result = result || {};
@@ -238,7 +227,30 @@ sankey.Application = Class.extend(
 			}
 		}
 		return result;
-	}
+	},
+
+    getParam: function( name )
+    {
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var results = regex.exec( window.location.href );
+
+        // the param isn'T part of the normal URL pattern...
+        //
+        if( results === null ) {
+            // maybe it is part in the hash.
+            //
+            regexS = "[\\#]"+name+"=([^&#]*)";
+            regex = new RegExp( regexS );
+            results = regex.exec( window.location.hash );
+            if( results === null ) {
+                return null;
+            }
+        }
+
+        return results[1];
+    }
 
 });
 

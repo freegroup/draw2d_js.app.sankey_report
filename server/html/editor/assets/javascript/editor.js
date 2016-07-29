@@ -1,19 +1,3 @@
-var conf= {
-	fileSuffix: ".sankey",
-
-	backend: {
-		file: {
-			list: "/backend/file/list",
-			get : "/backend/file/get",
-			save: "/backend/file/save"
-		},
-		hook:"/backend/hook",
-		weights:"/backend/sankey/weights",
-		suggestPath:"/backend/suggestPath",
-		suggestValue:"/backend/suggestValue"
-	}
-};
-
 
 /**
  * 
@@ -29,6 +13,7 @@ sankey.Application = Class.extend(
      */
     init : function()
     {
+		var _this =  this;
 		this.localStorage = [];
 		try {
 			if( 'localStorage' in window && window.localStorage !== null){
@@ -39,8 +24,7 @@ sankey.Application = Class.extend(
 		}
 
 		this.currentFileHandle= {
-			title: "Untitled"+conf.fileSuffix,
-            jsonTemplate: {}
+			title: "Untitled"+conf.fileSuffix
 		};
 
         this.view         = new sankey.View("canvas");
@@ -55,7 +39,7 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:0,
 				spacing_closed:0,
-				size:80,
+				size:120,
 				paneSelector: "#toolbar"
 			},
 			center: {
@@ -83,7 +67,7 @@ sankey.Application = Class.extend(
 				closable:false,
 				spacing_open:0,
 				spacing_closed:0,
-				size:60,
+				size:120,
 				paneSelector: "#palette"
 			},
 			center: {
@@ -114,37 +98,17 @@ sankey.Application = Class.extend(
 			}
 		});
 
-		this.view.centerDocument();
-	},
-
-	getParam: function( name )
-	{
-		name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-		var regexS = "[\\?&]"+name+"=([^&#]*)";
-		var regex = new RegExp( regexS );
-		var results = regex.exec( window.location.href );
-
-		// the param isn'T part of the normal URL pattern...
-		//
-		if( results === null ) {
-			// maybe it is part in the hash.
-			//
-			regexS = "[\\#]"+name+"=([^&#]*)";
-			regex = new RegExp( regexS );
-			results = regex.exec( window.location.hash );
-			if( results === null ) {
-				return null;
-			}
+		var diagram = this.getParam("diagram");
+		if(diagram){
+			this.fileOpen(diagram);
 		}
-
-		return results[1];
+		this.view.centerDocument();
 	},
 
 	fileNew: function(shapeTemplate)
 	{
 		this.currentFileHandle = {
-			title: "Untitled"+conf.fileSuffix,
-            jsonTemplate: {}
+			title: "Untitled"+conf.fileSuffix
 		};
 		this.view.clear();
 		if(shapeTemplate){
@@ -175,27 +139,51 @@ sankey.Application = Class.extend(
 	},
 
 
-	fileOpen: function()
+	fileOpen: function(name)
 	{
-		new sankey.dialog.FileOpen(this.currentFileHandle).show(
-			// success callback
-			$.proxy(function(json){
-				try{
-					this.view.clear();
-					var reader = new draw2d.io.json.Reader();
-					reader.unmarshal(this.view, json.content.diagram);
-                    this.setTemplate(json.content.jsonTemplate);
-					this.view.getCommandStack().markSaveLocation();
-					this.view.centerDocument();
-					this.view.diagramName=this.currentFileHandle.title;
-					this.updateWeights();
-				}
-				catch(e){
-					console.log(e);
-					this.view.clear();
-				}
-		    },this)
-        );
+        var _this = this;
+        var _open = function(fileName){
+                $.ajax({
+                        url: conf.backend.file.get,
+                        method: "POST",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        data:{
+                            id:fileName
+                        }
+                    }
+                ).done(function(response){
+                        try{
+                            _this.view.clear();
+                            var reader = new draw2d.io.json.Reader();
+                            reader.unmarshal(_this.view, response.content.diagram);
+                            _this.view.getCommandStack().markSaveLocation();
+                            _this.view.centerDocument();
+                            _this.updateWeights();
+                            window.location.hash = "diagram="+fileName;
+                            _this.currentFileHandle.title=fileName;
+                        }
+                        catch(e){
+                            console.log(e);
+                            _this.view.clear();
+                        }
+                    }
+                );
+
+            };
+
+        if(name){
+            _open(name);
+        }
+        else {
+            new sankey.dialog.FileSelect().show(_open);
+        }
+	},
+
+	fileShare:function()
+	{
+		new sankey.dialog.FileShare(this.currentFileHandle).show();
 	},
 
 	updateWeights:function()
@@ -224,7 +212,8 @@ sankey.Application = Class.extend(
 	},
 
 
-	flatten:function (obj, path, result) {
+	flatten:function (obj, path, result)
+    {
 		var key, val, _path;
 		path = path || [];
 		result = result || {};
@@ -238,7 +227,30 @@ sankey.Application = Class.extend(
 			}
 		}
 		return result;
-	}
+	},
+
+    getParam: function( name )
+    {
+        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var results = regex.exec( window.location.href );
+
+        // the param isn'T part of the normal URL pattern...
+        //
+        if( results === null ) {
+            // maybe it is part in the hash.
+            //
+            regexS = "[\\#]"+name+"=([^&#]*)";
+            regex = new RegExp( regexS );
+            results = regex.exec( window.location.hash );
+            if( results === null ) {
+                return null;
+            }
+        }
+
+        return results[1];
+    }
 
 });
 
@@ -331,11 +343,14 @@ sankey.Toolbar = Class.extend({
 		//
 		view.getCommandStack().addEventListener(this);
 
-		this.openButton  = $("<button title='Open Report' class='ion-ios-download-outline icon'></button>");
-		this.html.append(this.openButton);
-		this.openButton.button().click($.proxy(function(){
-			app.fileOpen();
+
+		this.overviewButton  = $("<button title='Back To Overview' class='ion-grid icon'></button>");
+		this.html.append(this.overviewButton);
+		this.overviewButton.button().click($.proxy(function(){
+			window.location.href="../dashboard";
 		},this));
+
+
 
 		this.saveButton  = $("<button title='Save Report' class='ion-ios-upload-outline icon'></button>");
 		this.html.append(this.saveButton);
@@ -343,12 +358,6 @@ sankey.Toolbar = Class.extend({
 			app.fileSave();
 		},this));
 
-
-		this.newButton  = $("<button title='New Report' class='ion-ios-plus-outline icon'></button>");
-		this.html.append(this.newButton);
-		this.newButton.button().click($.proxy(function(){
-			app.fileNew();
-		},this));
 
 		this.delimiter  = $("<span class='toolbar_delimiter'>&nbsp;</span>");
 		this.html.append(this.delimiter);
@@ -390,8 +399,17 @@ sankey.Toolbar = Class.extend({
 		this.shareButton  = $("<button class='ion-android-share-alt icon'></button>");
 		this.html.append(this.shareButton);
 		this.shareButton.button().click($.proxy(function(){
-			new sankey.dialog.FileShare().show();
+			app.fileShare();
 		},this));
+
+
+		this.viewButton  = $("<button class='ion-android-open icon'></button>");
+		this.html.append(this.viewButton);
+		this.viewButton.button().click($.proxy(function(){
+			window.open(getAbsoluteUrl("../viewer#diagram="+app.currentFileHandle.title));
+		},this));
+
+
 
 	},
 
@@ -429,10 +447,8 @@ sankey.Toolbar = Class.extend({
 
 sankey.View = draw2d.Canvas.extend({
 	
-	init:function(id, readOnly)
+	init:function(id)
     {
-        var _this = this;
-
         this.diagramName = "";
 
 		this._super(id);
@@ -457,47 +473,9 @@ sankey.View = draw2d.Canvas.extend({
 
         // show the ports of the elements only if the mouse cursor is close to the shape.
         //
-        if(readOnly){
-            this.installEditPolicy(new draw2d.policy.canvas.ReadOnlySelectionPolicy());
-        }
-        else {
-            this.installEditPolicy(new sankey.policy.EditPolicy());
-            this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible: 50});
-            this.installEditPolicy(this.coronaFeedback);
-        }
-
-
-        var diagram = this.getParam("diagram");
-        if(diagram){
-            this.diagramName = diagram;
-            $.ajax({
-                    url: conf.backend.file.get,
-                    method: "POST",
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    data:{
-                        id:diagram
-                    }
-                }
-            ).done(function(json){
-                var reader = new draw2d.io.json.Reader();
-                reader.unmarshal(_this, json.content.diagram);
-                _this.commonPorts.each(function(i,port){
-                    port.setVisible(false);
-                });
-                _this.centerDocument();
-                $.ajax({
-                    url: conf.backend.weights,
-                    method: "POST",
-                    data: {id:diagram},
-                    success:function(response){
-                        _this.updateWeights(response);
-                    }
-                });
-
-            });
-        }
+        this.installEditPolicy(new sankey.policy.EditPolicy());
+        this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible: 50});
+        this.installEditPolicy(this.coronaFeedback);
     },
 
     updateWeights: function(weights)
@@ -622,42 +600,78 @@ sankey.View = draw2d.Canvas.extend({
             c.scrollLeft(bb.x- c.width()/2);
 
         }
-    },
-
-    getParam: function( name )
-    {
-        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-        var regexS = "[\\?&]"+name+"=([^&#]*)";
-        var regex = new RegExp( regexS );
-        var results = regex.exec( window.location.href );
-
-        // the param isn'T part of the normal URL pattern...
-        //
-        if( results === null ) {
-            // maybe it is part in the hash.
-            //
-            regexS = "[\\#]"+name+"=([^&#]*)";
-            regex = new RegExp( regexS );
-            results = regex.exec( window.location.hash );
-            if( results === null ) {
-                return null;
-            }
-        }
-
-        return results[1];
     }
 });
 
 ;
-sankey.dialog.FileOpen = Class.extend({
+sankey.dialog.FileSave = Class.extend({
 
     /**
      * @constructor
      *
      */
-    init:function(fileHandle)
+    init:function(fileHandler){
+        this.currentFileHandle = fileHandler;
+    },
+
+    /**
+     * @method
+     *
+     * Open the file picker and load the selected file.<br>
+     *
+     * @param {Function} successCallback callback method if the user select a file and the content is loaded
+     * @param {Function} errorCallback method to call if any error happens
+     *
+     * @since 4.0.0
+     */
+    show: function(json, successCallback)
     {
-        this.currentFileHandle=fileHandle;
+        var _this = this;
+
+        $("#githubSaveFileDialog .githubFileName").val(_this.currentFileHandle.title);
+
+        $('#githubSaveFileDialog').on('shown.bs.modal', function () {
+            $(this).find('input:first').focus();
+        });
+        $("#githubSaveFileDialog").modal("show");
+
+        // Button: Commit to GitHub
+        //
+        $("#githubSaveFileDialog .okButton").off("click").on("click", function () {
+            new draw2d.io.png.Writer().marshal(app.view, function (imageDataUrl){
+                var data ={
+                    base64Image:imageDataUrl,
+                    id:$("#githubSaveFileDialog .githubFileName").val(),
+                    content:JSON.stringify(json, undefined, 2)
+                };
+
+                $.ajax({
+                        url: conf.backend.file.save,
+                        method: "POST",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        data:data
+                    }
+                ).done(function(){
+                    $('#githubSaveFileDialog').modal('hide');
+                    _this.currentFileHandle.title=data.id;
+                    successCallback();
+                });
+            }, app.view.getBoundingBox().scale(10, 10));
+         });
+
+    }
+
+});;
+sankey.dialog.FileSelect = Class.extend({
+
+    /**
+     * @constructor
+     *
+     */
+    init:function()
+    {
     },
 
     /**
@@ -679,9 +693,7 @@ sankey.dialog.FileOpen = Class.extend({
 
     fetchPathContent: function( successCallback )
     {
-        var _this = this;
-
-        $.ajax({
+         $.ajax({
                 url:conf.backend.file.list ,
                 xhrFields: {
                     withCredentials: true
@@ -723,85 +735,12 @@ sankey.dialog.FileOpen = Class.extend({
 
                     $('.githubPath[data-draw2d="true"]').off("click").on("click", function () {
                         var id   = $(this).data("id");
-                        $.ajax({
-                                url: conf.backend.file.get,
-                                method: "POST",
-                                xhrFields: {
-                                    withCredentials: true
-                                },
-                                data:{
-                                    id:id
-                                }
-                            }
-                        ).done(function(content){
-                                _this.currentFileHandle.title=id;
-
-                                successCallback(content);
-                                $('#githubFileSelectDialog').modal('hide');
-                            }
-                        );
-
+                        $('#githubFileSelectDialog').modal('hide');
+                        successCallback(id);
                     });
                 }
         });
     }
-});;
-sankey.dialog.FileSave = Class.extend({
-
-    /**
-     * @constructor
-     *
-     */
-    init:function(fileHandler){
-        this.currentFileHandle = fileHandler;
-    },
-
-    /**
-     * @method
-     *
-     * Open the file picker and load the selected file.<br>
-     *
-     * @param {Function} successCallback callback method if the user select a file and the content is loaded
-     * @param {Function} errorCallback method to call if any error happens
-     *
-     * @since 4.0.0
-     */
-    show: function(json, successCallback)
-    {
-        var _this = this;
-
-        $("#githubSaveFileDialog .githubFileName").val(_this.currentFileHandle.title);
-
-        $('#githubSaveFileDialog').on('shown.bs.modal', function () {
-            $(this).find('input:first').focus();
-        });
-        $("#githubSaveFileDialog").modal("show");
-
-        // Button: Commit to GitHub
-        //
-        $("#githubSaveFileDialog .okButton").off("click").on("click", function () {
-            var data ={
-                id:$("#githubSaveFileDialog .githubFileName").val(),
-                content:JSON.stringify(json, undefined, 2)
-            };
-
-            $.ajax({
-                    url: conf.backend.file.save,
-                    method: "POST",
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    data:data
-                }
-            ).done(function(){
-                    $('#githubSaveFileDialog').modal('hide');
-                    _this.currentFileHandle.title=data.id;
-                    successCallback();
-            });
-        });
-
-    }
-
 });;
 sankey.dialog.FileShare = Class.extend({
 
@@ -830,16 +769,21 @@ sankey.dialog.FileShare = Class.extend({
 
         var compiled = Hogan.compile(html);
         var output = $(compiled.render({
-            files: this.currentFileHandle,
-            url: getAbsoluteUrl("viewer.html")
+            name: this.currentFileHandle.title,
+            url: getAbsoluteUrl("../viewer#diagram="+this.currentFileHandle.title)
         }));
 
-      //  output.attr("id","");
         $("body").append(output);
         output.modal('show');
 
+        var clipboard = new Clipboard('.shareButton.clipboard');
+        clipboard.on('success', function(e) {
+            output.find("#copiedToClipboardMessage").text("Link copied to Clipboard");
+        });
+
         output.on('hidden.bs.modal', function () {
           output.remove();
+          clipboard.destroy();
         });
     }
 });;

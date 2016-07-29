@@ -25,16 +25,21 @@ sankey.dialog.FileShare = Class.extend({
 
         var compiled = Hogan.compile(html);
         var output = $(compiled.render({
-            files: this.currentFileHandle,
-            url: getAbsoluteUrl("viewer.html")
+            name: this.currentFileHandle.title,
+            url: getAbsoluteUrl("../viewer#diagram="+this.currentFileHandle.title)
         }));
 
-      //  output.attr("id","");
         $("body").append(output);
         output.modal('show');
 
+        var clipboard = new Clipboard('.shareButton.clipboard');
+        clipboard.on('success', function(e) {
+            output.find("#copiedToClipboardMessage").text("Link copied to Clipboard");
+        });
+
         output.on('hidden.bs.modal', function () {
           output.remove();
+          clipboard.destroy();
         });
     }
 });

@@ -2,8 +2,19 @@
 
 
 body{
-  font-family:Helvetica, Arial, Verdana, sans-serif;
+  font-family: 'Raleway', sans-serif;
   color:#6b6b6b;
+}
+
+.headline{
+  padding-left: 130px;
+  position: absolute;
+  top: 70px;
+  font-size: 30px;
+  color: rgba(0,0,0,0.6);
+  -webkit-transition: all .5s ease-in-out;
+  -moz-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
 }
 
 #draw2dCanvasWrapper {
@@ -14,8 +25,8 @@ body{
 
 #toolbar{
   overflow: hidden;
-  background-color: #7266ba;
-
+  background-color: #f8f8f8;
+  border-color: #e7e7e7;
   padding-left: 100px;
 
   button {
@@ -40,12 +51,6 @@ body{
      opacity: 0.1;
     }
   }
-
-  #logo{
-    position:fixed;
-    top:0px;
-    left:0px;
-  }
 }
 
 .toolbar_delimiter{
@@ -59,19 +64,27 @@ body{
   display: inline-block;
 }
 
-#title{
-  position: absolute;
-  color: rgba(255,255,255,0.3);
-  top: 5px;
-  right: 10px;
-  font-size: 77px;
+
+
+.brand{
+  position:fixed;
+  top:0px;
+  left:0px;
+  height:120px;
 }
 
-#title2{
-  position: absolute;
-  color: rgba(255,255,255,0.7);
-  top: 29px;
-  right: 10px;
-  font-size: 14px;
-  font-weight: 100;
+.highlight{
+  color:#EA5565 !important;
 }
+
+.brand i{
+  font-size:70%;
+}
+
+.navbar-brand{
+  padding: 15px 15px !important;
+  -webkit-transition: all .5s ease-in-out;
+  -moz-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+}
+

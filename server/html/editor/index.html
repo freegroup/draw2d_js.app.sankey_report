@@ -1,10 +1,11 @@
 <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-    <title></title>
+    <title>Sankey - Transaction Mining</title>
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="viewport" content="width=device-width, minimum-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Raleway:100,200,300" >
     <link href="../common/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="../common/lib/ionicons/css/ionicons.min.css" />
     <link rel="stylesheet" href="./assets/css/main.css" >
@@ -48,9 +49,7 @@
     </div>
 </div>
 <div id="toolbar">
-    <img id="logo" src="assets/img/logo.png">
-    <div id="title">Sankey</div>
-    <div id="title2">state diagram</div>
+    <a class="navbar-brand brand highlight"  href="../index" target="_index"><img src="../common/assets/img/logo.png">Sankey <i>state</i></a>
 </div>
 
 
@@ -140,19 +139,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="media-heading">Share link to "{{name}}"</h3>
-                <h4 class="media-heading">Everyone will have access"</h4>
+                <h4 class="media-heading">Everyone will have read access"</h4>
             </div>
             <div class="modal-body">
                 <div class="btn-group" role="group" aria-label="Basic example">
-                    <button class="shareButton">
+                    <button class="shareButton clipboard" data-clipboard-text="{{url}}">
                         <span class="btn-circle btn-xl ion-ios-copy-outline  "></span>
                         <br>
-                        Copy Link
+                        <span id="copiedToClipboardMessage">Copy Link</span>
+
                     </button>
                     <button class="shareButton">
-                        <span class="btn-circle btn-xl ion-ios-email-outline "></span>
+                        <a href="mailto:?body={{url}}" class="btn-circle btn-xl ion-ios-email-outline "></a>
                         <br>
-                        Mail Link {{url}}
+                        Mail Link
                     </button>
                 </div>
 

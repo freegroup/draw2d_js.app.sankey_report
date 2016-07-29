@@ -2,7 +2,7 @@
 
 
 body{
-  font-family:Helvetica, Arial, Verdana, sans-serif;
+  font-family: 'Raleway', sans-serif;
   color:#6b6b6b;
 }
 
@@ -19,21 +19,22 @@ body{
 
 #palette{
   background-color: #3a3f51;
+  padding:30px;
 }
 
 
 #toolbar{
   overflow: hidden;
-  background-color: #7266ba;
-
-  padding-left: 100px;
+  background-color: #f8f8f8;
+  border-color: #e7e7e7;
+  padding-left: 140px;
 
   button {
-    color: white;
+    color: rgba(0,0,0,0.6);
     padding: 10px;
     border: 0;
     margin: 10px;
-    margin-top:20px;
+    margin-top:55px;
     font-weight: 100;
     background-color:transparent;
     outline:none;
@@ -51,11 +52,6 @@ body{
     }
   }
 
-  #logo{
-    position:fixed;
-    top:0px;
-    left:0px;
-  }
 }
 
 .toolbar_delimiter{
@@ -70,22 +66,31 @@ body{
 }
 
 
-#title{
-  position: absolute;
-  color: rgba(255,255,255,0.3);
-  top: 5px;
-  right: 10px;
-  font-size: 77px;
+
+
+.brand{
+  position:fixed;
+  top:0px;
+  left:0px;
+  height:120px;
 }
 
-#title2{
-  position: absolute;
-  color: rgba(255,255,255,0.7);
-  top: 29px;
-  right: 10px;
-  font-size: 14px;
-  font-weight: 100;
+.highlight{
+  color:#EA5565 !important;
 }
+
+.brand i{
+  font-size:70%;
+}
+
+.navbar-brand{
+  padding: 15px 15px !important;
+  -webkit-transition: all .5s ease-in-out;
+  -moz-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+}
+
+
 
 #transitions{
   th{
@@ -145,7 +150,7 @@ body{
     text-align: center;
     & .shareButton {
       height: 120px;
-      width: 90px;
+      min-width: 160px;
       line-height: 40px;
       border: 0;
       background: transparent;
@@ -163,6 +168,9 @@ body{
   }
 }
 
+#copiedToClipboardMessage{
+  white-space: nowrap;
+}
 .btn-circle {
   width: 30px;
   height: 30px;

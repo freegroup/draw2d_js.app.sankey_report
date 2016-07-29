@@ -1,12 +1,11 @@
-sankey.dialog.FileOpen = Class.extend({
+sankey.dialog.FileSelect = Class.extend({
 
     /**
      * @constructor
      *
      */
-    init:function(fileHandle)
+    init:function()
     {
-        this.currentFileHandle=fileHandle;
     },
 
     /**
@@ -28,9 +27,7 @@ sankey.dialog.FileOpen = Class.extend({
 
     fetchPathContent: function( successCallback )
     {
-        var _this = this;
-
-        $.ajax({
+         $.ajax({
                 url:conf.backend.file.list ,
                 xhrFields: {
                     withCredentials: true
@@ -72,24 +69,8 @@ sankey.dialog.FileOpen = Class.extend({
 
                     $('.githubPath[data-draw2d="true"]').off("click").on("click", function () {
                         var id   = $(this).data("id");
-                        $.ajax({
-                                url: conf.backend.file.get,
-                                method: "POST",
-                                xhrFields: {
-                                    withCredentials: true
-                                },
-                                data:{
-                                    id:id
-                                }
-                            }
-                        ).done(function(content){
-                                _this.currentFileHandle.title=id;
-
-                                successCallback(content);
-                                $('#githubFileSelectDialog').modal('hide');
-                            }
-                        );
-
+                        $('#githubFileSelectDialog').modal('hide');
+                        successCallback(id);
                     });
                 }
         });

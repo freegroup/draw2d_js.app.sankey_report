@@ -32,25 +32,28 @@ sankey.dialog.FileSave = Class.extend({
         // Button: Commit to GitHub
         //
         $("#githubSaveFileDialog .okButton").off("click").on("click", function () {
-            var data ={
-                id:$("#githubSaveFileDialog .githubFileName").val(),
-                content:JSON.stringify(json, undefined, 2)
-            };
+            new draw2d.io.png.Writer().marshal(app.view, function (imageDataUrl){
+                var data ={
+                    base64Image:imageDataUrl,
+                    id:$("#githubSaveFileDialog .githubFileName").val(),
+                    content:JSON.stringify(json, undefined, 2)
+                };
 
-            $.ajax({
-                    url: conf.backend.file.save,
-                    method: "POST",
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    data:data
-                }
-            ).done(function(){
+                $.ajax({
+                        url: conf.backend.file.save,
+                        method: "POST",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        data:data
+                    }
+                ).done(function(){
                     $('#githubSaveFileDialog').modal('hide');
                     _this.currentFileHandle.title=data.id;
                     successCallback();
-            });
-        });
+                });
+            }, app.view.getBoundingBox().scale(10, 10));
+         });
 
     }
 

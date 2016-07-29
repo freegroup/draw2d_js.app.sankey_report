@@ -12,11 +12,14 @@ sankey.Toolbar = Class.extend({
 		//
 		view.getCommandStack().addEventListener(this);
 
-		this.openButton  = $("<button title='Open Report' class='ion-ios-download-outline icon'></button>");
-		this.html.append(this.openButton);
-		this.openButton.button().click($.proxy(function(){
-			app.fileOpen();
+
+		this.overviewButton  = $("<button title='Back To Overview' class='ion-grid icon'></button>");
+		this.html.append(this.overviewButton);
+		this.overviewButton.button().click($.proxy(function(){
+			window.location.href="../dashboard";
 		},this));
+
+
 
 		this.saveButton  = $("<button title='Save Report' class='ion-ios-upload-outline icon'></button>");
 		this.html.append(this.saveButton);
@@ -24,12 +27,6 @@ sankey.Toolbar = Class.extend({
 			app.fileSave();
 		},this));
 
-
-		this.newButton  = $("<button title='New Report' class='ion-ios-plus-outline icon'></button>");
-		this.html.append(this.newButton);
-		this.newButton.button().click($.proxy(function(){
-			app.fileNew();
-		},this));
 
 		this.delimiter  = $("<span class='toolbar_delimiter'>&nbsp;</span>");
 		this.html.append(this.delimiter);
@@ -71,8 +68,17 @@ sankey.Toolbar = Class.extend({
 		this.shareButton  = $("<button class='ion-android-share-alt icon'></button>");
 		this.html.append(this.shareButton);
 		this.shareButton.button().click($.proxy(function(){
-			new sankey.dialog.FileShare().show();
+			app.fileShare();
 		},this));
+
+
+		this.viewButton  = $("<button class='ion-android-open icon'></button>");
+		this.html.append(this.viewButton);
+		this.viewButton.button().click($.proxy(function(){
+			window.open(getAbsoluteUrl("../viewer#diagram="+app.currentFileHandle.title));
+		},this));
+
+
 
 	},
 

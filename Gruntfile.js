@@ -15,6 +15,8 @@ module.exports = function (grunt) {
             },
             libs: {
                 src: [
+                    './bower_components/clipboard/dist/clipboard.min.js',
+                    './bower_components/shufflejs/dist/jquery.shuffle.modernizr.min.js',
                     './bower_components/shifty/dist/shifty.min.js',
                     './bower_components/draw2d/dist/patched_raphael.js',
                     './bower_components/jquery/jquery.min.js',
@@ -46,6 +48,12 @@ module.exports = function (grunt) {
                 ],
                 dest: './server/html/viewer/assets/javascript/viewer.js'
             },
+            dashboard: {
+                src: [
+                    './src/dashboard/assets/javascript/**/*.js'
+                ],
+                dest: './server/html/dashboard/assets/javascript/dashboard.js'
+            },
             editor: {
                 src: [
                     './src/editor/assets/javascript/**/*.js'
@@ -67,11 +75,29 @@ module.exports = function (grunt) {
                 src: '**/*.html',
                 dest: 'server/html/editor/'
             },
+            index:{
+                expand: true,
+                cwd: 'src/gh-pages/',
+                src: ['**/*'],
+                dest: 'server/html/index/'
+            },
+            dashboard: {
+                expand: true,
+                cwd: 'src/dashboard/',
+                src: '**/*.html',
+                dest: 'server/html/dashboard/'
+            },
             ionicons:{
                 expand: true,
                 cwd: 'bower_components/Ionicons/',
                 src: ['./css/*', "./fonts/*"],
                 dest: './server/html/common/lib/ionicons'
+            },
+            dashboard_img: {
+                expand: true,
+                cwd: 'src/dashboard/assets/img',
+                src: '*.*',
+                dest: './server/html/dashboard/assets/img'
             },
             editor_img: {
                 expand: true,
@@ -106,6 +132,14 @@ module.exports = function (grunt) {
         },
 
         less: {
+            dashboard: {
+                options: {
+                    compress: false
+                },
+                files: {
+                    "./server/html/dashboard/assets/css/main.css": "./src/dashboard/assets/less/*.less"
+                }
+            },
             editor: {
                 options: {
                     compress: false
@@ -166,7 +200,7 @@ module.exports = function (grunt) {
         'jshint',
         'concat',
         'less',
-        'copy:editor','copy:viewer','copy:editor_img','copy:common_img','copy:bootstrap' , 'copy:ionicons', 'copy:serverjs'
+        'copy:index', 'copy:dashboard', 'copy:editor', 'copy:viewer', 'copy:dashboard_img', 'copy:editor_img', 'copy:common_img', 'copy:bootstrap', 'copy:ionicons', 'copy:serverjs'
      ]);
 
     grunt.registerTask('publish', [ 'copy:ghpages','gh-pages']);

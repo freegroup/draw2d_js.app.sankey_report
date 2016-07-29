@@ -113,7 +113,7 @@
 }
 
 body {
-  font-family: Helvetica, Arial, Verdana, sans-serif;
+  font-family: 'Raleway', sans-serif;
   color: #6b6b6b;
 }
 #content {
@@ -126,18 +126,20 @@ body {
 }
 #palette {
   background-color: #3a3f51;
+  padding: 30px;
 }
 #toolbar {
   overflow: hidden;
-  background-color: #7266ba;
-  padding-left: 100px;
+  background-color: #f8f8f8;
+  border-color: #e7e7e7;
+  padding-left: 140px;
 }
 #toolbar button {
-  color: white;
+  color: rgba(0, 0, 0, 0.6);
   padding: 10px;
   border: 0;
   margin: 10px;
-  margin-top: 20px;
+  margin-top: 55px;
   font-weight: 100;
   background-color: transparent;
   outline: none;
@@ -152,11 +154,6 @@ body {
 #toolbar .icon[disabled] {
   opacity: 0.1;
 }
-#toolbar #logo {
-  position: fixed;
-  top: 0px;
-  left: 0px;
-}
 .toolbar_delimiter {
   width: 2px;
   height: 35px;
@@ -167,20 +164,23 @@ body {
   margin-right: 20px;
   display: inline-block;
 }
-#title {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.3);
-  top: 5px;
-  right: 10px;
-  font-size: 77px;
+.brand {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  height: 120px;
 }
-#title2 {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.7);
-  top: 29px;
-  right: 10px;
-  font-size: 14px;
-  font-weight: 100;
+.highlight {
+  color: #EA5565 !important;
+}
+.brand i {
+  font-size: 70%;
+}
+.navbar-brand {
+  padding: 15px 15px !important;
+  -webkit-transition: all 0.5s ease-in-out;
+  -moz-transition: all 0.5s ease-in-out;
+  transition: all 0.5s ease-in-out;
 }
 #transitions th {
   font-size: 10px;
@@ -232,7 +232,7 @@ body {
 }
 #fileShareDialog .modal-body .shareButton {
   height: 120px;
-  width: 90px;
+  min-width: 160px;
   line-height: 40px;
   border: 0;
   background: transparent;
@@ -244,6 +244,9 @@ body {
 #fileShareDialog .modal-body .shareButton:hover .btn-circle {
   background: #1c9bab;
   color: white;
+}
+#copiedToClipboardMessage {
+  white-space: nowrap;
 }
 .btn-circle {
   width: 30px;

@@ -56,10 +56,11 @@ var port = process.env.PORT || 6800;
 // provide the DigitalTrainingStudio WebApp with this very simple
 // HTTP server. good enough for an private raspi access
 //
-app.use("/common", [auth, express.static(__dirname+'/html/common')]);
-app.use("/editor", [auth, express.static(__dirname+'/html/editor')]);
-app.use("/viewer", [auth, express.static(__dirname+'/html/viewer')]);
-app.use("/"      , [      express.static(__dirname+'/html/landingpage')]);
+app.use("/common",   [auth, express.static(__dirname+'/html/common')]);
+app.use("/editor",   [auth, express.static(__dirname+'/html/editor')]);
+app.use("/viewer",   [      express.static(__dirname+'/html/viewer')]);
+app.use("/dashboard",[auth, express.static(__dirname+'/html/dashboard')]);
+app.use("/index",    [      express.static(__dirname+'/html/index')]);
 
 // to support JSON-encoded bodies
 app.use(bodyParser.json({limit: '50mb'}));
@@ -69,21 +70,27 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
 app.get('/backend/file/list', function (req, res) {
     var query = persistence.client.query("SELECT * from file");
+
     query.on("row", function (row, result) {
         result.addRow(row);
     });
+
     query.on("end", function (result) {
+        var json = JSON.stringify( {files:result.rows.map(function(f){return {id: f.id, base64Image: f.base64image }})});
+        console.log(json);
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify( {files:result.rows.map(function(f){return {id: f.id};})}));
+        res.send(json);
     });
 });
 
 app.post('/backend/file/get', function (req, res) {
     res.setHeader('Content-Type', 'application/json');
     var query = persistence.client.query("SELECT * from file where id=$1",[req.body.id]);
+
     query.on("row", function (row, result) {
         result.addRow(row);
     });
+
     query.on("end", function (result) {
         res.setHeader('Content-Type', 'application/json');
         if(result.rows.length>0) {
@@ -96,7 +103,7 @@ app.post('/backend/file/get', function (req, res) {
 });
 
 app.post('/backend/file/save', function (req, res) {
-    persistence.client.query('INSERT into file (id, doc) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET doc = $3',  [req.body.id, req.body.content,req.body.content],function(){
+    persistence.client.query('INSERT into file (id, doc, base64Image) VALUES($1, $2, $3) ON CONFLICT (id) DO UPDATE SET doc = $2, base64Image=$3',  [req.body.id, req.body.content, req.body.base64Image],function(){
         res.send('true');
     });
 });
@@ -140,7 +147,6 @@ app.post('/backend/hook', function(req, res){
         type   : body.object,
         object : body.content
     };
-    console.log(json);
     sankey.process({jsonId:body.object+":"+id,json:json});
     res.send('true');
 });

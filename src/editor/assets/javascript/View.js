@@ -4,10 +4,8 @@
 
 sankey.View = draw2d.Canvas.extend({
 	
-	init:function(id, readOnly)
+	init:function(id)
     {
-        var _this = this;
-
         this.diagramName = "";
 
 		this._super(id);
@@ -32,47 +30,9 @@ sankey.View = draw2d.Canvas.extend({
 
         // show the ports of the elements only if the mouse cursor is close to the shape.
         //
-        if(readOnly){
-            this.installEditPolicy(new draw2d.policy.canvas.ReadOnlySelectionPolicy());
-        }
-        else {
-            this.installEditPolicy(new sankey.policy.EditPolicy());
-            this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible: 50});
-            this.installEditPolicy(this.coronaFeedback);
-        }
-
-
-        var diagram = this.getParam("diagram");
-        if(diagram){
-            this.diagramName = diagram;
-            $.ajax({
-                    url: conf.backend.file.get,
-                    method: "POST",
-                    xhrFields: {
-                        withCredentials: true
-                    },
-                    data:{
-                        id:diagram
-                    }
-                }
-            ).done(function(json){
-                var reader = new draw2d.io.json.Reader();
-                reader.unmarshal(_this, json.content.diagram);
-                _this.commonPorts.each(function(i,port){
-                    port.setVisible(false);
-                });
-                _this.centerDocument();
-                $.ajax({
-                    url: conf.backend.weights,
-                    method: "POST",
-                    data: {id:diagram},
-                    success:function(response){
-                        _this.updateWeights(response);
-                    }
-                });
-
-            });
-        }
+        this.installEditPolicy(new sankey.policy.EditPolicy());
+        this.coronaFeedback = new draw2d.policy.canvas.CoronaDecorationPolicy({diameterToBeVisible: 50});
+        this.installEditPolicy(this.coronaFeedback);
     },
 
     updateWeights: function(weights)
@@ -197,29 +157,6 @@ sankey.View = draw2d.Canvas.extend({
             c.scrollLeft(bb.x- c.width()/2);
 
         }
-    },
-
-    getParam: function( name )
-    {
-        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-        var regexS = "[\\?&]"+name+"=([^&#]*)";
-        var regex = new RegExp( regexS );
-        var results = regex.exec( window.location.href );
-
-        // the param isn'T part of the normal URL pattern...
-        //
-        if( results === null ) {
-            // maybe it is part in the hash.
-            //
-            regexS = "[\\#]"+name+"=([^&#]*)";
-            regex = new RegExp( regexS );
-            results = regex.exec( window.location.hash );
-            if( results === null ) {
-                return null;
-            }
-        }
-
-        return results[1];
     }
 });
 
